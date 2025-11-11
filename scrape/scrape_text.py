@@ -1,5 +1,5 @@
 from scrape_base import scraper_ISAT
-from db_write import LinkDatabase
+from database.db_write import LinkDatabase
 
 if __name__ == "__main__":
     urls = [

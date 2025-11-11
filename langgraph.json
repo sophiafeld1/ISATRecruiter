@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "langgraph": "latest"
+  },
+  "graphs": {
+    "default": "main:graph"
+  }
+}
+

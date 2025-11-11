@@ -1,4 +1,4 @@
-from db_write import LinkDatabase
+from database.db_write import LinkDatabase
 
 def view_links(db):
     links = db.get_all_links()
