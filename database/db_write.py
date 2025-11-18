@@ -1,4 +1,5 @@
 import os
+import json
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from typing import List
@@ -27,75 +28,147 @@ class LinkDatabase:
     
     def create_table(self):
         cursor = self.conn.cursor()
+        # Enable pgvector extension if not already enabled
+        cursor.execute("CREATE EXTENSION IF NOT EXISTS vector")
         cursor.execute("""
-            CREATE TABLE IF NOT EXISTS scraped_links (
+            CREATE TABLE IF NOT EXISTS pages (
                 id SERIAL PRIMARY KEY,
-                origin_url TEXT NOT NULL,
-                link TEXT NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE(origin_url, link)
+                url TEXT UNIQUE NOT NULL,
+                html TEXT,
+                text TEXT,
+                links JSONB,
+                scraped_at TIMESTAMP DEFAULT NOW()
             )
         """)
         cursor.execute("""
-            CREATE TABLE IF NOT EXISTS scraped_text (
+            CREATE TABLE IF NOT EXISTS chunks (
                 id SERIAL PRIMARY KEY,
-                origin_url TEXT NOT NULL,
-                text_content TEXT NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE(origin_url)
+                page_id INTEGER REFERENCES pages(id) ON DELETE CASCADE,
+                chunk_text TEXT NOT NULL,
+                embedding VECTOR(1536),
+                token_count INTEGER
             )
+        """)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS courses (
+                id SERIAL PRIMARY KEY,
+                course_name TEXT NOT NULL,
+                course_description TEXT NOT NULL,
+                prerequisites TEXT
+            )
+        """)
+        # Add prerequisites column if it doesn't exist (for existing tables)
+        cursor.execute("""
+            DO $$ 
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM information_schema.columns 
+                    WHERE table_name='courses' AND column_name='prerequisites'
+                ) THEN
+                    ALTER TABLE courses ADD COLUMN prerequisites TEXT;
+                END IF;
+            END $$;
         """)
         self.conn.commit()
         cursor.close()
     
-    def write_links(self, origin_url: str, links: List[str]):
-        print(f"\nAppending to database (origin: {origin_url}):")
-        for link in links:
-            cursor = self.conn.cursor()
-            try:
-                cursor.execute("""
-                    INSERT INTO scraped_links (origin_url, link)
-                    VALUES (%s, %s)
-                    ON CONFLICT (origin_url, link) DO NOTHING
-                """, (origin_url, link))
-                self.conn.commit()
-                print(f"  - {link}")
-            except psycopg2.Error as e:
-                print(f"Error inserting link: {e}")
-                self.conn.rollback()
-            finally:
-                cursor.close()
-    
-    def write_text(self, origin_url: str, text: str):
-        print(f"\nAppending text to database (origin: {origin_url}):")
+    def upsert_page(self, url: str, html: str = None, text: str = None, links: List[str] = None):
+        """
+        Insert or update a page in the pages table.
+        On conflict (url) update html, text, links, scraped_at.
+        
+        Args:
+            url (str): The URL of the page
+            html (str, optional): The HTML content
+            text (str, optional): The text content
+            links (List[str], optional): List of links found on the page
+        
+        Returns:
+            int: The page id
+        """
         cursor = self.conn.cursor()
         try:
+            # Convert links list to JSONB if provided
+            links_jsonb = json.dumps(links) if links else None
+            
             cursor.execute("""
-                INSERT INTO scraped_text (origin_url, text_content)
-                VALUES (%s, %s)
-                ON CONFLICT (origin_url) DO UPDATE SET text_content = EXCLUDED.text_content
-            """, (origin_url, text))
+                INSERT INTO pages (url, html, text, links, scraped_at)
+                VALUES (%s, %s, %s, %s, NOW())
+                ON CONFLICT (url) 
+                DO UPDATE SET 
+                    html = EXCLUDED.html,
+                    text = EXCLUDED.text,
+                    links = EXCLUDED.links,
+                    scraped_at = NOW()
+                RETURNING id
+            """, (url, html, text, links_jsonb))
+            page_id = cursor.fetchone()[0]
             self.conn.commit()
-            print(f"  - Text stored ({len(text)} characters)")
+            return page_id
         except psycopg2.Error as e:
-            print(f"Error inserting text: {e}")
+            print(f"Error upserting page: {e}")
             self.conn.rollback()
+            raise
         finally:
             cursor.close()
     
-    def get_all_links(self) -> List[dict]:
-        cursor = self.conn.cursor(cursor_factory=RealDictCursor)
-        cursor.execute("SELECT id, origin_url, link, created_at FROM scraped_links")
-        results = cursor.fetchall()
-        cursor.close()
-        return [dict(row) for row in results]
+    def insert_course(self, course_name: str, course_description: str, prerequisites: str = None):
+        """
+        Insert a course into the courses table.
+        
+        Args:
+            course_name (str): The name of the course (e.g., "ISAT 112")
+            course_description (str): The full course description text
+            prerequisites (str, optional): Comma-separated list of prerequisite courses
+        
+        Returns:
+            int: The course id
+        """
+        cursor = self.conn.cursor()
+        try:
+            cursor.execute("""
+                INSERT INTO courses (course_name, course_description, prerequisites)
+                VALUES (%s, %s, %s)
+                RETURNING id
+            """, (course_name, course_description, prerequisites))
+            course_id = cursor.fetchone()[0]
+            self.conn.commit()
+            return course_id
+        except psycopg2.Error as e:
+            print(f"Error inserting course: {e}")
+            self.conn.rollback()
+            raise
+        finally:
+            cursor.close()
     
-    def get_all_text(self) -> List[dict]:
-        cursor = self.conn.cursor(cursor_factory=RealDictCursor)
-        cursor.execute("SELECT id, origin_url, text_content, created_at FROM scraped_text")
-        results = cursor.fetchall()
-        cursor.close()
-        return [dict(row) for row in results]
+    def insert_chunk(self, page_id: int, chunk_text: str, embedding: List[float] = None, token_count: int = None):
+        """
+        Insert a chunk into the chunks table.
+        
+        Args:
+            page_id (int): The id of the page this chunk belongs to
+            chunk_text (str): The text content of the chunk
+            embedding (List[float], optional): The embedding vector (1536 dimensions)
+            token_count (int, optional): The number of tokens in the chunk
+        """
+        cursor = self.conn.cursor()
+        try:
+            # Convert embedding list to string format for pgvector if provided
+            embedding_str = None
+            if embedding:
+                embedding_str = '[' + ','.join(map(str, embedding)) + ']'
+            
+            cursor.execute("""
+                INSERT INTO chunks (page_id, chunk_text, embedding, token_count)
+                VALUES (%s, %s, %s::vector, %s)
+            """, (page_id, chunk_text, embedding_str, token_count))
+            self.conn.commit()
+        except psycopg2.Error as e:
+            print(f"Error inserting chunk: {e}")
+            self.conn.rollback()
+            raise
+        finally:
+            cursor.close()
     
     def close(self):
         if self.conn:
