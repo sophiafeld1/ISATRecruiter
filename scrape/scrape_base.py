@@ -17,9 +17,19 @@ class scraper_ISAT:
         
         try:
             page = requests.get(clean_url, headers=headers, timeout=10)
-            page.raise_for_status()  # Raise exception for bad status codes
-            self.soup = BeautifulSoup(page.text, "html.parser")
             self.status_code = page.status_code
+            
+            # Check for 404 status code
+            if page.status_code == 404:
+                raise Exception(f"404 Not Found: {clean_url}")
+            
+            page.raise_for_status()  # Raise exception for other bad status codes
+            self.soup = BeautifulSoup(page.text, "html.parser")
+            
+            # Also check if page content indicates an error page (even if status is 200)
+            text_content = self.soup.get_text(separator=" ", strip=True)
+            if "Resource Not Found" in text_content or ("404" in text_content[:200] and "not found" in text_content[:200].lower()):
+                raise Exception(f"Error page detected (404-like content): {clean_url}")
         except requests.exceptions.RequestException as e:
             raise Exception(f"Failed to fetch {clean_url}: {e}")
 

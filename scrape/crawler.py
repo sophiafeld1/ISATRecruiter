@@ -52,6 +52,7 @@ class Crawler:
                 links = scraper.get_links()
                 
                 # Store main page text (without course descriptions)
+                # Note: scraper_ISAT already raises exception for 404s, so we won't reach here for 404s
                 page_id = self.db.upsert_page(url, text=text, links=links)
                 print(f"[{pages_crawled}] {url}")
                 print(f"  ✓ Stored page (ID: {page_id}, {len(text)} chars, {len(links)} links)")
@@ -108,7 +109,14 @@ class Crawler:
                 time.sleep(0.5)
                 
             except Exception as e:
-                print(f"  ✗ Error: {e}\n")
+                error_msg = str(e)
+                # Check if it's a 404 error - don't write to database
+                if "404" in error_msg or "Not Found" in error_msg or "Error page detected" in error_msg:
+                    print(f"[{pages_crawled}] {url}")
+                    print(f"  ✗ 404/Error page skipped (not stored in database): {error_msg}\n")
+                else:
+                    print(f"[{pages_crawled}] {url}")
+                    print(f"  ✗ Error: {error_msg}\n")
                 continue
         
         print(f"\nComplete! Visited {pages_crawled} pages.")

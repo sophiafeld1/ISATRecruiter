@@ -23,7 +23,6 @@ def view_pages(cursor):
     for page in pages:
         print(f"\nID: {page['id']}\n\n")
         print(f"URL: {page['url']}\n\n")
-        print(f"HTML: {page['html']}\n\n")
         print(f"Text: {page['text']}\n\n")
         print(f"Links: {page['links']}\n\n")
         print(f"Scraped at: {page['scraped_at']}\n\n")
