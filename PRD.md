@@ -75,14 +75,6 @@ Prospective students and parents struggle to find up‑to‑date, trustworthy in
 - Truncation: token‑aware chunk selection; keep within model context window.
 - Safety checks: detect injection (e.g., “ignore previous instructions”), external URLs, or personal advice requests; respond with refusal template. 
 
-### 15) Milestones and Timeline (7 weeks example)
-- Week 1: Repo, infra, choose models/DB, ingest 10 docs, first embeddings.
-- Week 2: Retrieval API (top‑k), minimal chat UI, citations.
-- Week 3: Prompting polish, refusal flow, analytics logging, feedback widget.
-- Week 4: Reranker integration, eval set v1, quality baseline.
-- Week 5: Admin upload + re‑index, corpus versioning, UI/accessibility polish.
-- Week 6: Security review, rate limits, deploy pilot on SIS staging, QA.
-- Week 7: Fixes from pilot, documentation, handoff.
 
 ### 16) Deliverables
 - Running chatbot widget embedded on SIS site (staging).
