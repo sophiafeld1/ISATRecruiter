@@ -53,6 +53,13 @@ def chunk_pages():
         print(f"Chunking page {page_id}: {url[:60]}...")
         
         try:
+            # DELETE existing chunks for this page first (to replace, not duplicate)
+            cursor.execute("DELETE FROM chunks WHERE page_id = %s", (page_id,))
+            deleted_count = cursor.rowcount
+            db.conn.commit()
+            if deleted_count > 0:
+                print(f"  → Deleted {deleted_count} existing chunks")
+            
             # Split text into semantic chunks
             chunks = chunker.create_documents([text])
             
@@ -129,6 +136,13 @@ def chunk_courses():
         print(f"Chunking course {course_id}: {course_name[:50]}...")
         
         try:
+            # DELETE existing chunks for this course first (to replace, not duplicate)
+            cursor.execute("DELETE FROM chunks WHERE course_id = %s", (course_id,))
+            deleted_count = cursor.rowcount
+            db.conn.commit()
+            if deleted_count > 0:
+                print(f"  → Deleted {deleted_count} existing chunks")
+            
             # Split text into semantic chunks
             chunks = chunker.create_documents([text])
             

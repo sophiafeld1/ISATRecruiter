@@ -162,6 +162,29 @@ class scraper_ISAT:
         
         return None
 
+    def _extract_prerequisites(self):
+        '''Extract prerequisites from course description page.'''
+        all_text = self.soup.get_text(separator=" ", strip=True)
+        
+        # Look for prerequisite patterns
+        patterns = [
+            r'Prerequisite\(s\):\s*(.+?)(?=Corequisite|Prerequisite|Credits|PeopleSoft|Grading|Back to Top|Print-Friendly|$)',
+            r'Prerequisites?:\s*(.+?)(?=Corequisite|Prerequisite|Credits|PeopleSoft|Grading|Back to Top|Print-Friendly|$)',
+        ]
+        
+        for pattern in patterns:
+            match = re.search(pattern, all_text, re.IGNORECASE | re.DOTALL)
+            if match:
+                prereq_text = match.group(1).strip()
+                # Clean up - remove extra whitespace
+                prereq_text = re.sub(r'\s+', ' ', prereq_text)
+                # Remove trailing punctuation/whitespace
+                prereq_text = prereq_text.rstrip('. ')
+                if len(prereq_text) > 5:  # Only return if substantial
+                    return prereq_text
+        
+        return None
+
     def get_courses_from_program_page(self):
         '''
         Extract courses from program page.
@@ -214,12 +237,17 @@ class scraper_ISAT:
         for metadata in courses_metadata:
             description = None
             course_name = None
+            prerequisites = metadata['prerequisites']  # Start with prerequisites from program page
             
             if metadata['url']:
                 try:
                     desc_scraper = scraper_ISAT(metadata['url'])
                     course_name = desc_scraper._extract_course_name()
                     description = desc_scraper._extract_course_description()
+                    # Extract prerequisites from description page (overrides program page if found)
+                    desc_prereqs = desc_scraper._extract_prerequisites()
+                    if desc_prereqs:
+                        prerequisites = desc_prereqs
                 except Exception:
                     pass
             
@@ -230,7 +258,7 @@ class scraper_ISAT:
                 'course_name': course_name,
                 'course_code': metadata['course_code'],
                 'course_description': description or '',
-                'prerequisites': metadata['prerequisites'],
+                'prerequisites': prerequisites,
                 'url': metadata['url']
             })
         
