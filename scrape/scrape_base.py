@@ -1,127 +1,237 @@
 from bs4 import BeautifulSoup
 import requests
 import re
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin
 
 
 class scraper_ISAT:
     def __init__(self, URL):
         self.URL = URL
-        # Remove fragment identifier (#) from URL before requesting
         clean_url = URL.split('#')[0] if '#' in URL else URL
         
-        # Add headers to avoid being blocked
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         }
         
         try:
             page = requests.get(clean_url, headers=headers, timeout=10)
-            self.status_code = page.status_code
-            
-            # Check for 404 status code
             if page.status_code == 404:
                 raise Exception(f"404 Not Found: {clean_url}")
-            
-            page.raise_for_status()  # Raise exception for other bad status codes
+            page.raise_for_status()
             self.soup = BeautifulSoup(page.text, "html.parser")
             
-            # Also check if page content indicates an error page (even if status is 200)
+            # Check for error pages
             text_content = self.soup.get_text(separator=" ", strip=True)
-            if "Resource Not Found" in text_content or ("404" in text_content[:200] and "not found" in text_content[:200].lower()):
-                raise Exception(f"Error page detected (404-like content): {clean_url}")
+            if "Resource Not Found" in text_content:
+                raise Exception(f"Error page detected: {clean_url}")
         except requests.exceptions.RequestException as e:
             raise Exception(f"Failed to fetch {clean_url}: {e}")
 
-    def get_text(self):
-        ''' get the text of the page '''
-        return self.soup.get_text()
+    def _remove_bottom_bar(self):
+        '''Remove bottom bar and JavaScript error messages.'''
+        try:
+            # Remove elements containing JavaScript error
+            js_error = "Javascript is currently not supported"
+            for text_node in self.soup.find_all(text=lambda t: t and js_error in str(t)):
+                parent = text_node.find_parent()
+                if parent:
+                    parent.decompose()
+            
+            # Remove table rows starting from tr[4]
+            body = self.soup.find('body')
+            if body:
+                table = body.find('table')
+                if table:
+                    tbody = table.find('tbody')
+                    if tbody:
+                        tr_elements = tbody.find_all('tr', recursive=False)
+                        if len(tr_elements) >= 4:
+                            for tr in tr_elements[3:]:
+                                tr.decompose()
+            
+            # Remove footer elements
+            for selector in ['footer', '#footer', '.footer']:
+                for elem in self.soup.select(selector):
+                    elem.decompose()
+        except Exception:
+            pass
+
+    def _remove_js_error_from_text(self, text):
+        '''Remove JavaScript error messages from text.'''
+        patterns = [
+            "Javascript is currently not supported",
+            "or is disabled by this browser",
+            "Please enable Javascript for full functionality"
+        ]
+        for pattern in patterns:
+            if pattern in text:
+                pos = text.find(pattern)
+                text = text[:pos].strip()
+                break
+        return text
 
     def clean_text(self):
-        ''' clean the text of the page '''
-        return self.soup.get_text(separator=" ", strip=True)
+        '''Clean text by removing bottom bar and JS errors.'''
+        self._remove_bottom_bar()
+        text = self.soup.get_text(separator=" ", strip=True)
+        return self._remove_js_error_from_text(text)
 
     def get_links(self):
-        ''' get all links from the page (absolute and relative URLs) '''
-        all_links = []
+        '''Get all valid links from the page.'''
+        links = []
         for a_tag in self.soup.find_all("a", href=True):
-            href = a_tag.get("href")
-            if href:
-                all_links.append(href.strip())
+            href = a_tag.get("href", "").strip()
+            if href and not href.startswith(('javascript:', 'mailto:', 'tel:')):
+                if '#' in href and not href.startswith('#'):
+                    href = href.split('#')[0]
+                if href:
+                    links.append(href)
+        return links
+
+    def _extract_course_description(self):
+        '''Extract course description from course description page.'''
+        # Remove unwanted elements first
+        for tag in self.soup(['script', 'style', 'nav', 'header', 'footer', 'noscript']):
+            tag.decompose()
         
-        valid_links = []
-        for link in all_links:
-            if not link:
-                continue
-            if link.startswith('javascript:') or link.startswith('mailto:') or link.startswith('tel:'):
-                continue
-            if not link.startswith('#') and '#' in link:
-                link = link.split('#')[0]
-            if link:
-                valid_links.append(link)
+        self._remove_bottom_bar()
         
-        return valid_links
-    
+        # The course description is usually in a specific table row
+        # Look for table rows containing course code and "Credits"
+        tables = self.soup.find_all('table')
+        for table in tables:
+            rows = table.find_all('tr')
+            for row in rows:
+                text = row.get_text(separator=" ", strip=True)
+                # Check if this row contains course code and "Credits" (indicating course description)
+                if re.search(r'[A-Z]{2,4}\s+\d{3}[A-Z]?\.', text) and 'Credits' in text:
+                    # Extract just the course description part
+                    # Pattern: course code ... Credits ... description text
+                    match = re.search(r'([A-Z]{2,4}\s+\d{3}[A-Z]?\.\s+[^.]+\.)\s+(Credits.*?)(?=Print-Friendly|Skip to Content|Info For|$)', text, re.DOTALL)
+                    if match:
+                        # Get everything from course code to end (before navigation)
+                        desc_text = match.group(0)
+                    else:
+                        # Try simpler: from course code to end of row
+                        course_match = re.search(r'([A-Z]{2,4}\s+\d{3}[A-Z]?\.\s+.*)', text)
+                        if course_match:
+                            desc_text = course_match.group(1)
+                            # Remove navigation patterns
+                            desc_text = re.sub(r'(Print-Friendly Page|Skip to Content|Info For).*', '', desc_text, flags=re.DOTALL)
+                        else:
+                            desc_text = text
+                    
+                    desc_text = self._remove_js_error_from_text(desc_text)
+                    # Remove "Back to Top" and similar navigation
+                    desc_text = re.sub(r'Back to Top.*', '', desc_text, flags=re.IGNORECASE)
+                    desc_text = re.sub(r'\s+', ' ', desc_text).strip()
+                    if len(desc_text) > 100:
+                        return desc_text
+        
+        # Fallback: try to extract from all text
+        all_text = self.soup.get_text(separator=" ", strip=True)
+        # Look for pattern: course code ... Credits ... description ... (end before navigation)
+        match = re.search(r'([A-Z]{2,4}\s+\d{3}[A-Z]?\.\s+.*?Credits.*?)(?=Print-Friendly|Skip to Content|Info For|James Madison)', all_text, re.DOTALL)
+        if match:
+            text = match.group(1)
+            text = self._remove_js_error_from_text(text)
+            text = re.sub(r'\s+', ' ', text).strip()
+            return text if len(text) > 50 else ''
+        
+        return ''
+
+    def _extract_course_name(self):
+        '''Extract descriptive course name from course description page.'''
+        # Try h1 first
+        h1 = self.soup.find('h1')
+        if h1:
+            text = h1.get_text().strip()
+            match = re.match(r'[A-Z]{2,4}\s+\d{3}[A-Z]?\.\s+(.+)', text)
+            if match:
+                return match.group(1).strip()
+            return text
+        
+        # Try h2
+        h2 = self.soup.find('h2')
+        if h2:
+            text = h2.get_text().strip()
+            match = re.match(r'[A-Z]{2,4}\s+\d{3}[A-Z]?\.\s+(.+)', text)
+            if match:
+                return match.group(1).strip()
+            return text
+        
+        return None
+
     def get_courses_from_program_page(self):
         '''
-        Extract courses from a program page.
-        Returns list of dicts with: course_name, course_description, prerequisites
+        Extract courses from program page.
+        Returns: list of dicts with course_name, course_code, course_description, prerequisites, url
         '''
-        courses = []
+        courses_metadata = []
         
-        # Find all course title links (they have onclick="showCourse(...)")
-        all_links = self.soup.find_all('a', href=True)
-        
-        for link in all_links:
-            course_title = link.get_text().strip()
-            # Only process if it matches course pattern (e.g., "ISAT 330." or "BIO 140.")
-            if not re.match(r'[A-Z]{2,4}\s+\d{3}[A-Z]?\.', course_title):
+        # Step 1: Extract metadata from program page
+        for link in self.soup.find_all('a', href=True):
+            course_code_text = link.get_text().strip()
+            if not re.match(r'[A-Z]{2,4}\s+\d{3}[A-Z]?\.', course_code_text):
                 continue
             
-            # Extract course ID from onclick handler
-            # onclick="showCourse('62', '369747', ...)"
+            course_code = course_code_text.rstrip('.')
+            
+            # Extract course ID from onclick
             onclick = link.get('onclick', '')
             course_id = None
             catoid = None
-            
             if 'showCourse' in onclick:
-                # Extract catoid and coid from onclick
                 match = re.search(r"showCourse\('(\d+)',\s*'(\d+)'", onclick)
                 if match:
                     catoid = match.group(1)
                     course_id = match.group(2)
             
-            # If we found course ID, build description URL
-            description = None
-            if course_id and catoid:
-                desc_url = f"preview_course_nopop.php?catoid={catoid}&coid={course_id}"
-                full_desc_url = urljoin(self.URL, desc_url)
-                try:
-                    desc_scraper = scraper_ISAT(full_desc_url)
-                    description = desc_scraper.clean_text()
-                except Exception as e:
-                    # If we can't get description, continue anyway
-                    pass
-            
-            # Find the parent li to extract prerequisites
+            # Extract prerequisites
             li = link.find_parent('li', class_='acalog-course')
             prerequisites = []
             if li:
-                # Extract prerequisites - links with #tt IDs that are NOT the course itself
-                prereq_links = li.find_all('a', href=lambda x: x and x.startswith('#tt'))
-                for prereq_link in prereq_links:
+                for prereq_link in li.find_all('a', href=lambda x: x and x.startswith('#tt')):
                     prereq_name = prereq_link.get_text().strip()
-                    # Skip if it's the course title itself or empty
-                    if prereq_name and prereq_name not in course_title and prereq_name not in prerequisites:
-                        # Only add if it looks like a course code
+                    if prereq_name and prereq_name not in course_code_text:
                         if re.match(r'[A-Z]{2,4}\s+\d{3}', prereq_name):
                             prerequisites.append(prereq_name)
             
-            # Add course even if description is None (we'll try to get it later)
+            # Build course URL
+            course_url = None
+            if course_id and catoid:
+                desc_url = f"preview_course_nopop.php?catoid={catoid}&coid={course_id}"
+                course_url = urljoin(self.URL, desc_url)
+            
+            courses_metadata.append({
+                'course_code': course_code,
+                'prerequisites': ', '.join(prerequisites) if prerequisites else None,
+                'url': course_url
+            })
+        
+        # Step 2: Fetch course descriptions
+        courses = []
+        for metadata in courses_metadata:
+            description = None
+            course_name = None
+            
+            if metadata['url']:
+                try:
+                    desc_scraper = scraper_ISAT(metadata['url'])
+                    course_name = desc_scraper._extract_course_name()
+                    description = desc_scraper._extract_course_description()
+                except Exception:
+                    pass
+            
+            if not course_name:
+                course_name = metadata['course_code']
+            
             courses.append({
-                'course_name': course_title,
-                'course_description': description or '',  # Empty string if not found
-                'prerequisites': ', '.join(prerequisites) if prerequisites else None
+                'course_name': course_name,
+                'course_code': metadata['course_code'],
+                'course_description': description or '',
+                'prerequisites': metadata['prerequisites'],
+                'url': metadata['url']
             })
         
         return courses

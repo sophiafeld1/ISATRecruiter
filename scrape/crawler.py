@@ -8,122 +8,87 @@ if project_root not in sys.path:
 
 from scrape.scrape_base import scraper_ISAT
 from database.db_write import LinkDatabase
-from urllib.parse import urljoin, urlparse
 import time
 
 
 class Crawler:
     def __init__(self, seed_url: str):
         self.seed_url = seed_url
-        self.visited = set[str]()
-        self.queue = [seed_url]
         self.db = LinkDatabase()
+        # Open log files for appending
+        self.courses_log = open(os.path.join(project_root, "all_db_output.txt"), "a", encoding="utf-8")
+        self.pages_log = open(os.path.join(project_root, "pages_output.txt"), "a", encoding="utf-8")
 
-    def should_follow(self, url: str, base_domain: str) -> bool:
-        """Decide if we should follow this link."""
+    def crawl(self):
+        """Crawl the ISAT program page and extract all courses."""
+        print(f"Starting crawl: {self.seed_url}\n")
+        
         try:
-            parsed = urlparse(url)
-            if parsed.scheme not in ['http', 'https'] or parsed.netloc.lower() != base_domain.lower():
-                return False
-            # Allow preview_program.php pages (you want to scrape the seed page)
-            return True
-        except:
-            return False
-
-    def crawl(self, max_pages: int = 100):
-        """Crawl starting from seed_url."""
-        base_domain = urlparse(self.seed_url).netloc
-        pages_crawled = 0
-        
-        print(f"Starting crawl: {self.seed_url} (max {max_pages} pages)\n")
-        
-        while self.queue and pages_crawled < max_pages:
-            url = self.queue.pop(0)
+            # Scrape the ISAT program page
+            scraper = scraper_ISAT(self.seed_url)
+            text = scraper.clean_text()
+            links = scraper.get_links()
             
-            if url in self.visited:
-                continue
+            # Store program page
+            page_id = self.db.upsert_page(self.seed_url, text=text, links=links)
+            print(f"✓ Stored program page (ID: {page_id}, {len(text)} chars, {len(links)} links)")
             
-            self.visited.add(url)
-            pages_crawled += 1
+            # Log page to file
+            self.pages_log.write("=" * 80 + "\n")
+            self.pages_log.write(f"ID: {page_id}\n")
+            self.pages_log.write(f"URL: {self.seed_url}\n")
+            self.pages_log.write(f"Text length: {len(text)} characters\n")
+            self.pages_log.write(f"Links: {len(links)} links\n")
+            self.pages_log.write(f"Text preview: {text[:500]}...\n")
+            self.pages_log.write("-" * 80 + "\n\n")
+            self.pages_log.flush()
             
-            try:
-                scraper = scraper_ISAT(url)
-                text = scraper.clean_text()
-                links = scraper.get_links()
-                
-                # Store main page text (without course descriptions)
-                # Note: scraper_ISAT already raises exception for 404s, so we won't reach here for 404s
-                page_id = self.db.upsert_page(url, text=text, links=links)
-                print(f"[{pages_crawled}] {url}")
-                print(f"  ✓ Stored page (ID: {page_id}, {len(text)} chars, {len(links)} links)")
-                
-                # Extract courses from program page
-                courses = scraper.get_courses_from_program_page()
-                courses_stored = 0
-                courses_with_desc = 0
-                if courses:
-                    print(f"  Found {len(courses)} courses on page")
-                    for course in courses:
-                        # Only store if we have a description (non-empty)
-                        if course['course_description']:
-                            self.db.insert_course(
-                                course['course_name'],
-                                course['course_description'],
-                                course.get('prerequisites')
-                            )
-                            courses_stored += 1
-                            courses_with_desc += 1
-                        time.sleep(0.2)  # Be nice to server when fetching descriptions
+            # Extract courses from program page
+            courses = scraper.get_courses_from_program_page()
+            print(f"\nFound {len(courses)} courses on page\n")
+            
+            courses_stored = 0
+            for course in courses:
+                # Only store if we have a description (non-empty)
+                if course.get('course_description') and len(course['course_description'].strip()) > 50:
+                    course_id = self.db.insert_course(
+                        course['course_name'],
+                        course['course_code'],
+                        course['course_description'],
+                        course.get('prerequisites'),
+                        course.get('url')
+                    )
+                    courses_stored += 1
                     
-                    if courses_stored > 0:
-                        print(f"  ✓ Stored {courses_stored} courses ({courses_with_desc} with descriptions)")
-                
-                # Add new links to queue
-                new_links = 0
-                for link in links:
-                    # Skip fragment-only links (they're anchors on the same page)
-                    if link.startswith('#'):
-                        continue
+                    # Log course to file
+                    self.courses_log.write("=" * 80 + "\n")
+                    self.courses_log.write(f"Course ID: {course_id}\n")
+                    self.courses_log.write(f"Course Name: {course['course_name']}\n")
+                    self.courses_log.write(f"Course Code: {course['course_code']}\n")
+                    self.courses_log.write(f"Prerequisites: {course.get('prerequisites', 'None')}\n")
+                    self.courses_log.write(f"URL: {course.get('url', 'N/A')}\n")
+                    self.courses_log.write(f"Description length: {len(course['course_description'])} characters\n")
+                    self.courses_log.write(f"Description preview: {course['course_description'][:500]}...\n")
+                    self.courses_log.write("-" * 80 + "\n\n")
+                    self.courses_log.flush()
                     
-                    absolute_link = urljoin(url, link)
-                    
-                    # Skip if URL is same page with just different fragment
-                    parsed_current = urlparse(url)
-                    parsed_link = urlparse(absolute_link)
-                    base_current = parsed_current.path + ('?' + parsed_current.query if parsed_current.query else '')
-                    base_link = parsed_link.path + ('?' + parsed_link.query if parsed_link.query else '')
-                    
-                    if base_current == base_link:
-                        continue  # Same page, different fragment - don't follow
-                    
-                    if self.should_follow(absolute_link, base_domain):
-                        if absolute_link not in self.visited and absolute_link not in self.queue:
-                            self.queue.append(absolute_link)
-                            new_links += 1
-                
-                if new_links > 0:
-                    print(f"  → Added {new_links} URLs to queue ({len(self.queue)} total)\n")
+                    print(f"  ✓ Stored: {course['course_code']} - {course['course_name']}")
                 else:
-                    print()
+                    print(f"  ✗ Skipped: {course['course_code']} - No description")
                 
-                time.sleep(0.5)
-                
-            except Exception as e:
-                error_msg = str(e)
-                # Check if it's a 404 error - don't write to database
-                if "404" in error_msg or "Not Found" in error_msg or "Error page detected" in error_msg:
-                    print(f"[{pages_crawled}] {url}")
-                    print(f"  ✗ 404/Error page skipped (not stored in database): {error_msg}\n")
-                else:
-                    print(f"[{pages_crawled}] {url}")
-                    print(f"  ✗ Error: {error_msg}\n")
-                continue
-        
-        print(f"\nComplete! Visited {pages_crawled} pages.")
-        self.db.close()
+                time.sleep(0.2)  # Be nice to server
+            
+            print(f"\n✓ Complete! Stored {courses_stored} courses out of {len(courses)} total.")
+            
+        except Exception as e:
+            print(f"✗ Error: {e}")
+        finally:
+            self.db.close()
+            self.courses_log.close()
+            self.pages_log.close()
 
 
 if __name__ == "__main__":
     seed_url = "https://catalog.jmu.edu/preview_program.php?catoid=62&poid=27120#1"
     crawler = Crawler(seed_url)
-    crawler.crawl(max_pages=50)  # Start with 50 pages as a test
+    crawler.crawl()
