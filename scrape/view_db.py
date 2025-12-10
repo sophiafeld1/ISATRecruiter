@@ -54,9 +54,11 @@ def view_courses(cursor, show_list=True):
     courses = cursor.fetchall()
     for course in courses:
         print(f"\nID: {course['id']}\n\n")
-        print(f"Course name: {course['course_name']}\n\n")
-        print(f"Course description: {course['course_description']}\n\n")
-        print(f"Prerequisites: {course['prerequisites']}\n\n")
+        print(f"Course name: {course.get('course_name', 'N/A')}\n\n")
+        print(f"Course code: {course.get('course_code', 'N/A')}\n\n")
+        print(f"Course description: {course.get('course_description', 'N/A')}\n\n")
+        print(f"Prerequisites: {course.get('prerequisites', 'None')}\n\n")
+        print(f"URL: {course.get('url', 'N/A')}\n\n")
         print("-" * 80 + "\n\n")
     print(f"\nTotal courses: {len(courses)}\n\n")
     

@@ -6,3 +6,13 @@
   # Setup
   run requirements.txt
   python version: 3.11 
+
+
+  # .env
+  Create a .env file and add your openAI key, starts with sk-...
+  `OPENAI_API_KEY=sk-`
+  LangSmith Key, starts with lsv...
+  `LANGSMITH_API_KEY=lsv`
+  If using LangSmith add your 
+  `LANGSMITH_WORKSPACE_ID`
+
