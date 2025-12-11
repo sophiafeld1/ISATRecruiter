@@ -9,9 +9,15 @@ interface Message {
   content: string;
 }
 
+interface ConversationMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
 export default function Home() {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
+  const [conversationHistory, setConversationHistory] = useState<ConversationMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -39,7 +45,10 @@ export default function Home() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ question: userMessage }),
+        body: JSON.stringify({ 
+          question: userMessage,
+          conversation_history: conversationHistory
+        }),
       });
 
       const data = await response.json();
@@ -49,6 +58,11 @@ export default function Home() {
       }
 
       setMessages(prev => [...prev, { role: 'bot', content: data.answer }]);
+      
+      // Update conversation history with the response from the API
+      if (data.conversation_history && Array.isArray(data.conversation_history)) {
+        setConversationHistory(data.conversation_history);
+      }
     } catch (error: any) {
       setMessages(prev => [...prev, { 
         role: 'bot', 

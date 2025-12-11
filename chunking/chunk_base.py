@@ -13,6 +13,25 @@ from langchain_experimental.text_splitter import SemanticChunker
 from langchain_openai import OpenAIEmbeddings
 from database.db_write import LinkDatabase
 from psycopg2.extras import RealDictCursor
+import signal
+from contextlib import contextmanager
+
+
+@contextmanager
+def timeout(seconds):
+    """Context manager for timeout handling."""
+    def timeout_handler(signum, frame):
+        raise TimeoutError(f"Operation timed out after {seconds} seconds")
+    
+    # Set the signal handler
+    old_handler = signal.signal(signal.SIGALRM, timeout_handler)
+    signal.alarm(seconds)
+    
+    try:
+        yield
+    finally:
+        signal.alarm(0)
+        signal.signal(signal.SIGALRM, old_handler)
 
 
 def chunk_pages():
@@ -52,16 +71,26 @@ def chunk_pages():
         
         print(f"Chunking page {page_id}: {url[:60]}...")
         
+        # Check if chunks already exist - skip if they do
+        cursor.execute("SELECT COUNT(*) as count FROM chunks WHERE page_id = %s", (page_id,))
+        existing_count = cursor.fetchone()['count']
+        if existing_count > 0:
+            print(f"  ⏭ Skipped - already has {existing_count} chunks\n")
+            continue
+        
         try:
-            # DELETE existing chunks for this page first (to replace, not duplicate)
-            cursor.execute("DELETE FROM chunks WHERE page_id = %s", (page_id,))
-            deleted_count = cursor.rowcount
-            db.conn.commit()
-            if deleted_count > 0:
-                print(f"  → Deleted {deleted_count} existing chunks")
+            # Skip very large pages (they might timeout)
+            if len(text) > 50000:
+                print(f"  ⚠ Skipping page {page_id} - too large ({len(text)} chars)\n")
+                continue
             
-            # Split text into semantic chunks
-            chunks = chunker.create_documents([text])
+            # Split text into semantic chunks with timeout
+            try:
+                with timeout(120):  # 2 minute timeout
+                    chunks = chunker.create_documents([text])
+            except TimeoutError:
+                print(f"  ⚠ Timeout chunking page {page_id}, skipping...\n")
+                continue
             
             print(f"  → Created {len(chunks)} chunks")
             
@@ -98,11 +127,21 @@ def chunk_courses():
     db = LinkDatabase()
     cursor = db.conn.cursor(cursor_factory=RealDictCursor)
     
-    # Get all courses
-    cursor.execute("SELECT id, course_name, course_description, prerequisites FROM courses WHERE course_description IS NOT NULL ORDER BY id")
+    # Get only ISAT courses (100-400 level only, no 500+)
+    # Check both course_code and course_name since some courses have NULL course_code
+    cursor.execute("""
+        SELECT id, course_name, course_code, course_description, prerequisites 
+        FROM courses 
+        WHERE course_description IS NOT NULL 
+        AND (
+            (course_code LIKE 'ISAT%' AND course_code ~ '^ISAT [1-4]')
+            OR (course_code IS NULL AND course_name LIKE 'ISAT%' AND course_name ~ '^ISAT [1-4]')
+        )
+        ORDER BY COALESCE(course_code, course_name)
+    """)
     courses = cursor.fetchall()
     
-    print(f"Found {len(courses)} courses to chunk\n")
+    print(f"Found {len(courses)} ISAT courses (100-400 level) to chunk\n")
     
     if len(courses) == 0:
         print("No courses found. Run crawler first.")
@@ -135,16 +174,26 @@ def chunk_courses():
         
         print(f"Chunking course {course_id}: {course_name[:50]}...")
         
+        # Check if chunks already exist - skip if they do
+        cursor.execute("SELECT COUNT(*) as count FROM chunks WHERE course_id = %s", (course_id,))
+        existing_count = cursor.fetchone()['count']
+        if existing_count > 0:
+            print(f"  ⏭ Skipped - already has {existing_count} chunks\n")
+            continue
+        
         try:
-            # DELETE existing chunks for this course first (to replace, not duplicate)
-            cursor.execute("DELETE FROM chunks WHERE course_id = %s", (course_id,))
-            deleted_count = cursor.rowcount
-            db.conn.commit()
-            if deleted_count > 0:
-                print(f"  → Deleted {deleted_count} existing chunks")
+            # Skip very large course descriptions (they might timeout)
+            if len(text) > 10000:
+                print(f"  ⚠ Skipping course {course_id} - too large ({len(text)} chars)\n")
+                continue
             
-            # Split text into semantic chunks
-            chunks = chunker.create_documents([text])
+            # Split text into semantic chunks with timeout
+            try:
+                with timeout(120):  # 2 minute timeout
+                    chunks = chunker.create_documents([text])
+            except TimeoutError:
+                print(f"  ⚠ Timeout chunking course {course_id}, skipping...\n")
+                continue
             
             print(f"  → Created {len(chunks)} chunks")
             

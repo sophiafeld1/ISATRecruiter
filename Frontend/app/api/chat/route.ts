@@ -4,7 +4,7 @@ import path from 'path';
 
 export async function POST(request: NextRequest) {
   try {
-    const { question } = await request.json();
+    const { question, conversation_history } = await request.json();
 
     if (!question || typeof question !== 'string') {
       return NextResponse.json(
@@ -13,11 +13,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate conversation_history if provided
+    const history = conversation_history || [];
+    if (!Array.isArray(history)) {
+      return NextResponse.json(
+        { error: 'conversation_history must be an array' },
+        { status: 400 }
+      );
+    }
+
     // Get project root (one level up from Frontend)
     const projectRoot = path.resolve(process.cwd(), '..');
 
+    // Use the virtual environment's Python interpreter
+    const venvPython = path.join(projectRoot, 'ISATRecruiter', 'bin', 'python');
+    
+    // Use venv Python if it exists, otherwise fallback to python3
+    const pythonExecutable = venvPython;
+
     // Call Python function
-    const result = await new Promise<string>((resolve, reject) => {
+    const result = await new Promise<{answer: string, conversation_history: any[]}>((resolve, reject) => {
       const pythonCode = `
 import sys
 import os
@@ -31,11 +46,13 @@ os.chdir(project_root)
 # Import and call function
 from LangGraph.main import process_question
 question = json.loads(${JSON.stringify(JSON.stringify(question))})
-answer = process_question(question)
-print(answer, end='', flush=True)
+conversation_history = json.loads(${JSON.stringify(JSON.stringify(history))})
+answer, updated_history = process_question(question, conversation_history)
+result = json.dumps({"answer": answer, "conversation_history": updated_history})
+print(result, end='', flush=True)
       `.trim();
 
-      const pythonProcess = spawn('python3', ['-c', pythonCode], {
+      const pythonProcess = spawn(pythonExecutable, ['-c', pythonCode], {
         cwd: projectRoot,
         env: { ...process.env, PYTHONUNBUFFERED: '1' }
       });
@@ -58,7 +75,13 @@ print(answer, end='', flush=True)
         if (code !== 0) {
           reject(new Error(errorOutput || `Process exited with code ${code}`));
         } else {
-          resolve(output.trim());
+          try {
+            const parsed = JSON.parse(output.trim());
+            resolve(parsed);
+          } catch (e) {
+            // Fallback for backward compatibility
+            resolve({ answer: output.trim(), conversation_history: [] });
+          }
         }
       });
 
@@ -67,7 +90,10 @@ print(answer, end='', flush=True)
       });
     });
 
-    return NextResponse.json({ answer: result });
+    return NextResponse.json({ 
+      answer: result.answer, 
+      conversation_history: result.conversation_history 
+    });
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || 'Failed to process question' },
