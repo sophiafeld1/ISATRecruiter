@@ -97,4 +97,3 @@ The application will be available at `http://localhost:3000`
 - The database tables (`pages`, `chunks`, `courses`) are created automatically on first connection
 - Make sure PostgreSQL is running before starting the application
 - The virtual environment (`ISATRecruiter/`) should be activated when running Python scripts
-
