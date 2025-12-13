@@ -15,17 +15,60 @@ class LinkDatabase:
         self.create_table()
     
     def connect(self):
+        host = os.getenv("DB_HOST", "localhost")
+        port = os.getenv("DB_PORT", "5432")
+        database = os.getenv("DB_NAME", "isat_recruiter")
+        user = os.getenv("DB_USER", "postgres")  # Default for shared/local setup
+        password = os.getenv("DB_PASSWORD", "")    # Default for shared/local setup
+        
         try:
+            # Try to connect to the target database
             self.conn = psycopg2.connect(
-                host=os.getenv("DB_HOST", "localhost"),
-                port=os.getenv("DB_PORT", "5432"),
-                database=os.getenv("DB_NAME", "isat_recruiter"),
-                user=os.getenv("DB_USER", "postgres"),  # Default for shared/local setup
-                password=os.getenv("DB_PASSWORD", "")    # Default for shared/local setup
+                host=host,
+                port=port,
+                database=database,
+                user=user,
+                password=password
             )
         except psycopg2.Error as e:
-            print(f"Error connecting to database: {e}")
-            raise
+            # If database doesn't exist, create it
+            error_msg = str(e).lower()
+            if "does not exist" in error_msg or "database" in error_msg:
+                try:
+                    # Connect to default 'postgres' database to create the target database
+                    admin_conn = psycopg2.connect(
+                        host=host,
+                        port=port,
+                        database="postgres",  # Connect to default database
+                        user=user,
+                        password=password
+                    )
+                    admin_conn.autocommit = True  # Required for CREATE DATABASE
+                    cursor = admin_conn.cursor()
+                    
+                    # Check if database exists, create if it doesn't
+                    cursor.execute(f"SELECT 1 FROM pg_database WHERE datname = '{database}'")
+                    if not cursor.fetchone():
+                        cursor.execute(f'CREATE DATABASE {database}')
+                        print(f"Created database '{database}'")
+                    
+                    cursor.close()
+                    admin_conn.close()
+                    
+                    # Now connect to the newly created database
+                    self.conn = psycopg2.connect(
+                        host=host,
+                        port=port,
+                        database=database,
+                        user=user,
+                        password=password
+                    )
+                except psycopg2.Error as create_error:
+                    print(f"Error creating database: {create_error}")
+                    raise
+            else:
+                print(f"Error connecting to database: {e}")
+                raise
     
     def create_table(self):
         cursor = self.conn.cursor()
