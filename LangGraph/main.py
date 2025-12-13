@@ -22,7 +22,8 @@ from langchain_openai import OpenAIEmbeddings
 from openai import OpenAI
 from database.db_write import LinkDatabase
 
-load_dotenv()
+# Load .env file from project root
+load_dotenv(dotenv_path=os.path.join(project_root, '.env'))
 
 # Initialize clients
 client = OpenAI()

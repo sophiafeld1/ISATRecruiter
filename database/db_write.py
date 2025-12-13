@@ -6,7 +6,9 @@ from psycopg2.extras import RealDictCursor
 from typing import List
 from dotenv import load_dotenv
 
-load_dotenv()
+# Load .env file from project root (two levels up from database/)
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+load_dotenv(dotenv_path=os.path.join(project_root, '.env'))
 
 class LinkDatabase:
     def __init__(self):

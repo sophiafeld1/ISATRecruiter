@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { spawn } from 'child_process';
 import path from 'path';
+import { existsSync } from 'fs';
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,11 +26,18 @@ export async function POST(request: NextRequest) {
     // Get project root (one level up from Frontend)
     const projectRoot = path.resolve(process.cwd(), '..');
 
-    // Use the virtual environment's Python interpreter
-    const venvPython = path.join(projectRoot, 'ISATRecruiter', 'bin', 'python');
-    
-    // Use venv Python if it exists, otherwise fallback to python3
-    const pythonExecutable = venvPython;
+    // Find any virtual environment in the project root, or use system python3
+    const findPython = () => {
+      const venvNames = ['ISATRecruiter', 'venv', '.venv', 'env'];
+      for (const name of venvNames) {
+        const venvPython = path.join(projectRoot, name, 'bin', 'python');
+        if (existsSync(venvPython)) {
+          return venvPython;
+        }
+      }
+      return 'python3';
+    };
+    const pythonExecutable = findPython();
 
     // Call Python function
     const result = await new Promise<{answer: string, conversation_history: any[]}>((resolve, reject) => {
