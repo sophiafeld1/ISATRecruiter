@@ -13,7 +13,7 @@ A tool that helps prospective and current students find their way in the ISAT pr
 ### 1. Clone the Repository
 ```bash
 git clone <repository-url>
-cd AI_RAG
+cd ISATRecruiter
 ```
 
 ### 2. Database Setup
