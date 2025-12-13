@@ -49,9 +49,14 @@ class LinkDatabase:
                     cursor = admin_conn.cursor()
                     
                     # Check if database exists, create if it doesn't
-                    cursor.execute(f"SELECT 1 FROM pg_database WHERE datname = '{database}'")
+                    # Use parameterized query for safety (though database name is from env var)
+                    cursor.execute("SELECT 1 FROM pg_database WHERE datname = %s", (database,))
                     if not cursor.fetchone():
-                        cursor.execute(f'CREATE DATABASE {database}')
+                        # CREATE DATABASE doesn't support parameters, but we validate the name
+                        # Only allow alphanumeric, underscore, and hyphen for safety
+                        if not all(c.isalnum() or c in ('_', '-') for c in database):
+                            raise ValueError(f"Invalid database name: {database}")
+                        cursor.execute(f'CREATE DATABASE "{database}"')
                         print(f"Created database '{database}'")
                     
                     cursor.close()

@@ -26,8 +26,17 @@ export async function POST(request: NextRequest) {
     // Get project root (one level up from Frontend)
     const projectRoot = path.resolve(process.cwd(), '..');
 
-    // Find any virtual environment in the project root, or use system python3
+    // Resolve Python executable in a robust order:
+    // 1) Active shell venv (VIRTUAL_ENV)
+    // 2) Common local venv folder names in project root
+    // 3) System python3
     const findPython = () => {
+      const virtualEnv = process.env.VIRTUAL_ENV;
+      if (virtualEnv) {
+        const venvPython = path.join(virtualEnv, 'bin', 'python');
+        if (existsSync(venvPython)) return venvPython;
+      }
+
       const venvNames = ['ISATRecruiter', 'venv', '.venv', 'env'];
       for (const name of venvNames) {
         const venvPython = path.join(projectRoot, name, 'bin', 'python');

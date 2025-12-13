@@ -1,0 +1,13 @@
+{
+  "name": "isat-recruiter",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "cd Frontend && npm run dev",
+    "build": "cd Frontend && npm run build",
+    "start": "cd Frontend && npm run start",
+    "lint": "cd Frontend && npm run lint",
+    "install-frontend": "cd Frontend && npm install"
+  }
+}
+
