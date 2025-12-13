@@ -20,8 +20,8 @@ class LinkDatabase:
                 host=os.getenv("DB_HOST", "localhost"),
                 port=os.getenv("DB_PORT", "5432"),
                 database=os.getenv("DB_NAME", "isat_recruiter"),
-                user=os.getenv("DB_USER"),
-                password=os.getenv("DB_PASSWORD")
+                user=os.getenv("DB_USER", "postgres"),  # Default for shared/local setup
+                password=os.getenv("DB_PASSWORD", "")    # Default for shared/local setup
             )
         except psycopg2.Error as e:
             print(f"Error connecting to database: {e}")
