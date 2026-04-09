@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { ModeToggle } from '@/components/mode-toggle';
+import ReactMarkdown from 'react-markdown';
 
 interface Message {
   role: 'user' | 'bot';
@@ -57,7 +58,11 @@ export default function Home() {
         throw new Error(data.error || 'Failed to get response');
       }
 
-      setMessages(prev => [...prev, { role: 'bot', content: data.answer }]);
+      const answerText =
+        typeof data.answer === 'string' && data.answer.trim()
+          ? data.answer
+          : 'Sorry, the server returned an empty answer. Check the API / Python logs.';
+      setMessages(prev => [...prev, { role: 'bot', content: answerText }]);
       
       // Update conversation history with the response from the API
       if (data.conversation_history && Array.isArray(data.conversation_history)) {
@@ -105,36 +110,51 @@ export default function Home() {
         {/* Dark mode toggle */}
         <ModeToggle />
 
+        <div className="welcome-message">
+          <h1 className="main-title">ISAT Recruiter</h1>
+          <p>Ask me anything about the ISAT program!</p>
+        </div>
+
         {/* Chat messages area */}
         <div className="messages-container">
-          {messages.length === 0 ? (
-            <div className="welcome-message">
-              <h1 className="main-title">ISAT Recruiter</h1>
-              <p>Ask me anything about the ISAT program!</p>
-            </div>
-          ) : (
-            <div className="messages-list">
-              {messages.map((msg, index) => (
-                <div key={index} className={`message ${msg.role}`}>
-                  <div className="message-content">
-                    {msg.content}
-                  </div>
+          <div className="messages-list">
+            {messages.length === 0 && !isLoading && (
+              <div className="empty-chat-hint">
+                Start by asking a question about ISAT.
+              </div>
+            )}
+            {messages.map((msg, index) => (
+              <div key={index} className={`message ${msg.role}`}>
+                <div className="message-content">
+                  {msg.role === 'bot' ? (
+                    <ReactMarkdown
+                      components={{
+                        a: ({ node, ...props }) => (
+                          <a {...props} target="_blank" rel="noopener noreferrer" />
+                        ),
+                      }}
+                    >
+                      {msg.content}
+                    </ReactMarkdown>
+                  ) : (
+                    msg.content
+                  )}
                 </div>
-              ))}
-              {isLoading && (
-                <div className="message bot">
-                  <div className="message-content loading">
-                    <span className="typing-indicator">
-                      <span></span>
-                      <span></span>
-                      <span></span>
-                    </span>
-                  </div>
+              </div>
+            ))}
+            {isLoading && (
+              <div className="message bot">
+                <div className="message-content loading">
+                  <span className="typing-indicator">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </span>
                 </div>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-          )}
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
         </div>
 
         {/* Input bar at bottom */}
@@ -142,14 +162,18 @@ export default function Home() {
           className="input-bar"
           onSubmit={handleSubmit}
         >
-          <input
-            type="text"
-            placeholder="Ask about ISAT"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            className="message-input"
-            disabled={isLoading}
-          />
+          <label className="search-label">
+            <input
+              type="text"
+              placeholder="Ask about ISAT"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              className="message-input"
+              disabled={isLoading}
+              required
+            />
+            <span className="slash-icon">/</span>
+          </label>
           <button
             type="submit"
             className="send-button"

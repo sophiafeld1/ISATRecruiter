@@ -265,6 +265,45 @@ class LinkDatabase:
         finally:
             cursor.close()
     
+    def find_chunks_for_course_code(self, course_code: str, limit: int = 8) -> List[dict]:
+        """
+        Chunks for a course row (e.g. ISAT 449). Vector search alone often misses a specific course.
+        """
+        normalized = "".join(course_code.upper().split())
+        if not normalized:
+            return []
+        cursor = self.conn.cursor(cursor_factory=RealDictCursor)
+        try:
+            cursor.execute(
+                """
+                SELECT
+                    c.id AS chunk_id,
+                    c.chunk_text,
+                    c.page_id,
+                    c.course_id,
+                    c.token_count,
+                    co.course_name,
+                    co.course_code,
+                    co.course_description,
+                    co.prerequisites,
+                    co.url AS course_url,
+                    0.99 AS similarity
+                FROM chunks c
+                INNER JOIN courses co ON c.course_id = co.id
+                WHERE REPLACE(UPPER(TRIM(co.course_code)), ' ', '') = %s
+                ORDER BY c.id
+                LIMIT %s
+                """,
+                (normalized, limit),
+            )
+            return [dict(row) for row in cursor.fetchall()]
+        except psycopg2.Error as e:
+            print(f"Error finding chunks by course code: {e}", file=sys.stderr)
+            self.conn.rollback()
+            raise
+        finally:
+            cursor.close()
+    
     def find_similar_chunks(self, query_embedding: List[float], top_k: int = 8) -> List[dict]:
         """
         Find the most similar chunks to a query embedding using cosine similarity.
