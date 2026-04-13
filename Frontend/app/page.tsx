@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { ModeToggle } from '@/components/mode-toggle';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface Message {
   role: 'user' | 'bot';
@@ -133,6 +134,7 @@ export default function Home() {
                 <div className="message-content">
                   {msg.role === 'bot' ? (
                     <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
                       components={{
                         a: ({ node, ...props }) => (
                           <a {...props} target="_blank" rel="noopener noreferrer" />

@@ -47,6 +47,19 @@ def _load_schedule_template() -> str:
         return ""
 
 
+def _load_schedule_rules_reference() -> str:
+    """
+    Load hard schedule-planner rules from ISAT_RAG_requirements_reference.md.
+    Returns empty string if file is unavailable.
+    """
+    path = os.path.join(project_root, "ISAT_RAG_requirements_reference.md")
+    try:
+        with open(path, encoding="utf-8") as f:
+            return f.read().strip()
+    except OSError:
+        return ""
+
+
 def _is_schedule_request(question: str) -> bool:
     return bool(_SCHEDULE_RE.search(question or ""))
 
@@ -54,7 +67,7 @@ def _is_schedule_request(question: str) -> bool:
 def _missing_schedule_fields(question: str, conversation_history: list[dict]) -> list[str]:
     """
     Required intake fields for schedule generation:
-    concentration, sector, current year, completed courses/credits, start semester.
+    concentration, sector, current year, start semester.
     """
     user_text = " ".join(
         [question]
@@ -80,12 +93,6 @@ def _missing_schedule_fields(question: str, conversation_history: list[dict]) ->
             user_text,
         )
     )
-    has_completed = bool(
-        re.search(
-            r"\b(completed|already took|already taken|transfer|ap credit|dual enrollment|earned credits|have credit)\b",
-            user_text,
-        )
-    )
     has_start_semester = bool(
         re.search(r"\b(start|starting)\s+(fall|spring|summer)\s+20\d{2}\b|\b(fall|spring|summer)\s+20\d{2}\b", user_text)
     )
@@ -97,8 +104,6 @@ def _missing_schedule_fields(question: str, conversation_history: list[dict]) ->
         missing.append("Which sector(s) do you want to complete?")
     if not has_year:
         missing.append("What is your current year/standing (first-year, sophomore, junior, senior, 5th year +)?")
-    if not has_completed:
-        missing.append("How many credits have you already completed (including AP/transfer/dual enrollment)? reply 0 if none")
     if not has_start_semester:
         missing.append("What is your start semester (for example: Fall 2026)?")
     return missing
@@ -307,6 +312,7 @@ def answer_with_rag(state: GraphState) -> GraphState:
     chunks = state.get("chunks", [])
     conversation_history = state.get("conversation_history", [])
     schedule_template = _load_schedule_template()
+    schedule_rules = _load_schedule_rules_reference()
 
     # Intake gate: gather required planning fields before generating a schedule.
     if _is_schedule_request(question):
@@ -373,7 +379,19 @@ Context:
         system_message += (
             "\n\nFormatting reference for schedule requests (from templates.md):\n"
             f"{schedule_template}\n"
-            "When the user asks for a course schedule/plan, follow that template strictly."
+            "When the user asks for a course schedule/plan, follow that template strictly. "
+            "If electives are not fully chosen yet, use placeholders like "
+            "'Concentration Course 1 (Applied Computing)'. "
+            "Build General Education directly into the schedule using rows labeled "
+            "'General Education Course' as needed, and target the General Education requirement of 41 credits. "
+            "After the schedule table, always include a section listing elective choices available "
+            "for the selected concentration and remind the student how many elective credits they must pick."
+        )
+    if schedule_rules:
+        system_message += (
+            "\n\nHard planning rules reference (from ISAT_RAG_requirements_reference.md):\n"
+            f"{schedule_rules}\n"
+            "For course schedule generation, follow these rules as authoritative constraints."
         )
     
     # Build messages with conversation history

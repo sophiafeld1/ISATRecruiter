@@ -163,6 +163,25 @@ body {
   margin: 0;
 }
 
+.message-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 10px 0;
+  font-size: 0.92rem;
+}
+
+.message-content th,
+.message-content td {
+  border: 1px solid rgba(44, 44, 44, 0.25);
+  padding: 6px 8px;
+  vertical-align: top;
+}
+
+.message-content th {
+  background: rgba(69, 0, 132, 0.08);
+  text-align: left;
+}
+
 .message.user .message-content {
   background-color: #000;
   color: white;
