@@ -71,6 +71,22 @@ def view_courses(cursor, show_list=True):
         print(", ".join(course_names))
         print()
 
+
+def view_urls(cursor):
+    """View urls table."""
+    print("=" * 80)
+    print("URLS TABLE")
+    print("=" * 80)
+    cursor.execute("SELECT * FROM urls ORDER BY id")
+    rows = cursor.fetchall()
+    for row in rows:
+        print(f"\nID: {row['id']}\n")
+        print(f"Description: {row.get('description', '')}\n")
+        print(f"URL: {row.get('url', '')}\n")
+        print(f"Created at: {row.get('created_at')}\n")
+        print("-" * 80)
+    print(f"\nTotal urls: {len(rows)}\n")
+
 def main():
     db = LinkDatabase()
     cursor = db.conn.cursor(cursor_factory=RealDictCursor)
@@ -82,10 +98,11 @@ def main():
     print("1. pages")
     print("2. chunks")
     print("3. courses")
-    print("4. all")
+    print("4. urls")
+    print("5. all")
     print("0. exit")
     
-    choice = input("\nEnter your choice (0-4): ").strip()
+    choice = input("\nEnter your choice (0-5): ").strip()
     
     if choice == "1":
         view_pages(cursor)
@@ -94,13 +111,16 @@ def main():
     elif choice == "3":
         view_courses(cursor)
     elif choice == "4":
+        view_urls(cursor)
+    elif choice == "5":
         view_pages(cursor)
         view_chunks(cursor)
         view_courses(cursor)
+        view_urls(cursor)
     elif choice == "0":
         print("Exiting...")
     else:
-        print("Invalid choice. Please run again and select 0-4.")
+        print("Invalid choice. Please run again and select 0-5.")
     
     cursor.close()
     db.close()
