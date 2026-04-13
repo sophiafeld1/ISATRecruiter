@@ -182,6 +182,15 @@ body {
   text-align: left;
 }
 
+/* Past coursework (LLM wraps lines in <span class="past-course">) */
+.message-content .past-course {
+  color: #6b6b6b;
+}
+
+.dark .message-content .past-course {
+  color: rgba(255, 255, 255, 0.45);
+}
+
 .message.user .message-content {
   background-color: #000;
   color: white;

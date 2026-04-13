@@ -64,10 +64,44 @@ def _is_schedule_request(question: str) -> bool:
     return bool(_SCHEDULE_RE.search(question or ""))
 
 
+def _is_second_year_standing(user_text: str) -> bool:
+    """True if the student indicated they are in their second year (sophomore)."""
+    return bool(
+        re.search(
+            r"\b(second year|sophomore|soph\.?|year\s*2|2nd\s*year|2\s*st\s*year)\b",
+            user_text,
+        )
+    )
+
+
+def _has_prior_courses_disclosure(user_text: str) -> bool:
+    """
+    True if the student said what ISAT/JMU courses they already completed,
+    or explicitly said they have not taken any yet.
+    """
+    if re.search(r"\bisat\s*\d{3}\b", user_text):
+        return True
+    if re.search(
+        r"\b(none|no\s+prior|no\s+isat|not\s+yet|starting\s+with|first\s+isat|"
+        r"haven'?t\s+taken|have\s+not\s+taken)\b",
+        user_text,
+    ) and re.search(r"\b(class|classes|course|courses|isat)\b", user_text):
+        return True
+    if re.search(
+        r"\b(took|taken|completed|finished|passed)\b.*\b(class|classes|course|courses|isat)\b",
+        user_text,
+    ):
+        return True
+    if re.search(r"\bi\s*('?ve|ve)\s+(taken|completed|finished)\b", user_text):
+        return True
+    return False
+
+
 def _missing_schedule_fields(question: str, conversation_history: list[dict]) -> list[str]:
     """
     Required intake fields for schedule generation:
-    concentration, sector, current year, start semester.
+    concentration, sector, current year, start semester; for second-year students,
+    which courses they have already taken.
     """
     user_text = " ".join(
         [question]
@@ -106,6 +140,11 @@ def _missing_schedule_fields(question: str, conversation_history: list[dict]) ->
         missing.append("What is your current year/standing (first-year, sophomore, junior, senior, 5th year +)?")
     if not has_start_semester:
         missing.append("What is your start semester (for example: Fall 2026)?")
+    if _is_second_year_standing(user_text) and not _has_prior_courses_disclosure(user_text):
+        missing.append(
+            "Which classes have you already completed (course codes or names)? "
+            "If you have not completed any relevant courses yet, say that clearly."
+        )
     return missing
 
 
@@ -380,10 +419,18 @@ Context:
             "\n\nFormatting reference for schedule requests (from templates.md):\n"
             f"{schedule_template}\n"
             "When the user asks for a course schedule/plan, follow that template strictly. "
+            "Always produce **all four** year tables (First through Fourth Year). "
+            "Do not skip to Third Year because the student listed many courses or because of class standing. "
+            "Put completed courses in a **Completed coursework** summary table (grey `<span class=\"past-course\">` "
+            "in each cell) and **also** place those courses in the correct semester/year cells inside the four-year "
+            "tables with the same grey spans. "
+            "Include the full holistic sequence (**ISAT 190, 290, 390, 391**) unless already completed; do not omit 290/390/391. "
             "If electives are not fully chosen yet, use placeholders like "
             "'Concentration Course 1 (Applied Computing)'. "
             "Build General Education directly into the schedule using rows labeled "
             "'General Education Course' as needed, and target the General Education requirement of 41 credits. "
+            "A complete schedule must end with **Total Planned Credits:** 120 / 120 and "
+            "**Total General Education Credits Planned:** 41 / 41 as in the template. "
             "After the schedule table, always include a section listing elective choices available "
             "for the selected concentration and remind the student how many elective credits they must pick."
         )

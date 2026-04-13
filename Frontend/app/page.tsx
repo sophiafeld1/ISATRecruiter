@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { ModeToggle } from '@/components/mode-toggle';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
 
 interface Message {
   role: 'user' | 'bot';
@@ -135,6 +136,7 @@ export default function Home() {
                   {msg.role === 'bot' ? (
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
+                      rehypePlugins={[rehypeRaw]}
                       components={{
                         a: ({ node, ...props }) => (
                           <a {...props} target="_blank" rel="noopener noreferrer" />
