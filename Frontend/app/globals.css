@@ -86,6 +86,45 @@ body {
   letter-spacing: 0.02em;
 }
 
+.suggested-questions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-start;
+  align-items: center;
+  margin: 2px 0 6px 0;
+  width: 100%;
+}
+
+.suggestion-chip {
+  border: 1px solid rgba(69, 0, 132, 0.25);
+  background: rgba(255, 255, 255, 0.72);
+  color: #2c2c2c;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 0.74rem;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: background-color 0.12s ease, transform 0.12s ease;
+  max-width: 220px;
+  width: auto;
+  display: inline-flex;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.suggestion-chip:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.92);
+  transform: translateY(-1px);
+}
+
+.suggestion-chip:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .main-title {
   font-size: 2.1rem;
   color: rgba(0, 0, 0, 0.8);

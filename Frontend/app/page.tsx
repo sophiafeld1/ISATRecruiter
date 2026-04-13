@@ -21,6 +21,10 @@ export default function Home() {
   const [conversationHistory, setConversationHistory] = useState<ConversationMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const suggestedQuestions = [
+    "Generate a course schedule",
+    "What is ISAT?",
+  ];
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -30,12 +34,9 @@ export default function Home() {
     scrollToBottom();
   }, [messages]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!message.trim() || isLoading) return;
-
-    const userMessage = message.trim();
+  const sendQuestion = async (questionText: string) => {
+    const userMessage = questionText.trim();
+    if (!userMessage || isLoading) return;
     setMessage('');
     setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
     setIsLoading(true);
@@ -78,6 +79,11 @@ export default function Home() {
     }
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await sendQuestion(message);
+  };
+
   return (
     <div className="chat-container">
       <div className="chat-card">
@@ -114,7 +120,6 @@ export default function Home() {
           <h1 className="main-title">ISAT Recruiter</h1>
           <p>Ask me anything about the ISAT program!</p>
         </div>
-
         {/* Chat messages area */}
         <div className="messages-container">
           <div className="messages-list">
@@ -155,6 +160,20 @@ export default function Home() {
             )}
             <div ref={messagesEndRef} />
           </div>
+        </div>
+
+        <div className="suggested-questions" aria-label="Suggested questions">
+          {suggestedQuestions.map((q) => (
+            <button
+              key={q}
+              type="button"
+              className="suggestion-chip"
+              onClick={() => sendQuestion(q)}
+              disabled={isLoading}
+            >
+              {q}
+            </button>
+          ))}
         </div>
 
         {/* Input bar at bottom */}
