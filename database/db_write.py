@@ -91,6 +91,40 @@ class LinkDatabase:
             )
         """)
         cursor.execute("""
+            CREATE TABLE IF NOT EXISTS urls (
+                id SERIAL PRIMARY KEY,
+                description TEXT NOT NULL,
+                url TEXT UNIQUE NOT NULL,
+                created_at TIMESTAMP DEFAULT NOW()
+            )
+        """)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS courses (
+                id SERIAL PRIMARY KEY,
+                course_name TEXT NOT NULL,
+                course_code TEXT NOT NULL,
+                course_description TEXT NOT NULL,
+                prerequisites TEXT,
+                url TEXT
+            )
+        """)
+        # ABET syllabi metadata (hyphenated SQL names are awkward, so use abet_syllabi)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS abet_syllabi (
+                id SERIAL PRIMARY KEY,
+                source_pdf_path TEXT UNIQUE NOT NULL,
+                course_code TEXT,
+                course_name TEXT,
+                professor_name TEXT,
+                course_description TEXT,
+                prerequisites TEXT,
+                course_outcomes TEXT,
+                topics TEXT,
+                created_at TIMESTAMPTZ DEFAULT NOW(),
+                updated_at TIMESTAMPTZ DEFAULT NOW()
+            )
+        """)
+        cursor.execute("""
             CREATE TABLE IF NOT EXISTS chunks (
                 id SERIAL PRIMARY KEY,
                 page_id INTEGER REFERENCES pages(id) ON DELETE CASCADE,
@@ -111,16 +145,6 @@ class LinkDatabase:
                     ALTER TABLE chunks ADD COLUMN course_id INTEGER REFERENCES courses(id) ON DELETE CASCADE;
                 END IF;
             END $$;
-        """)
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS courses (
-                id SERIAL PRIMARY KEY,
-                course_name TEXT NOT NULL,
-                course_code TEXT NOT NULL,
-                course_description TEXT NOT NULL,
-                prerequisites TEXT,
-                url TEXT
-            )
         """)
         # Migration: Handle existing tables with old schema
         cursor.execute("""
@@ -196,6 +220,39 @@ class LinkDatabase:
             return page_id
         except psycopg2.Error as e:
             print(f"Error upserting page: {e}")
+            self.conn.rollback()
+            raise
+        finally:
+            cursor.close()
+
+    def upsert_url(self, description: str, url: str):
+        """
+        Insert or update a URL row in the urls table.
+
+        Args:
+            description (str): Human-readable label for the URL
+            url (str): URL string
+
+        Returns:
+            int: URL row id
+        """
+        cursor = self.conn.cursor()
+        try:
+            cursor.execute(
+                """
+                INSERT INTO urls (description, url, created_at)
+                VALUES (%s, %s, NOW())
+                ON CONFLICT (url)
+                DO UPDATE SET description = EXCLUDED.description
+                RETURNING id
+                """,
+                (description, url),
+            )
+            row_id = cursor.fetchone()[0]
+            self.conn.commit()
+            return row_id
+        except psycopg2.Error as e:
+            print(f"Error upserting url: {e}")
             self.conn.rollback()
             raise
         finally:
@@ -391,3 +448,7 @@ class LinkDatabase:
         if self.conn:
             self.conn.close()
 
+__main__ = __name__ == "__main__"
+if __main__:
+    db = LinkDatabase()
+    db.close()

@@ -5,6 +5,7 @@ Measures success rate using semantic similarity comparison.
 import sys
 import os
 from typing import List, Dict, Tuple
+from dotenv import load_dotenv
 
 # Add project root to path
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -16,6 +17,9 @@ from langchain_openai import OpenAIEmbeddings
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 
+openai_key = os.getenv("OPENAI_API_KEY")
+if not openai_key:
+    raise ValueError("OPENAI_API_KEY is not set in the environment variables")
 
 # Ground truth test cases: (question, expected_answer_keywords, expected_answer_concepts)
 GROUND_TRUTH = [
