@@ -443,6 +443,33 @@ class LinkDatabase:
             raise
         finally:
             cursor.close()
+
+    def fetch_all_courses(self) -> List[dict]:
+        """
+        Fetch all courses from the courses table.
+        """
+        cursor = self.conn.cursor(cursor_factory=RealDictCursor)
+        try:
+            cursor.execute(
+                """
+                SELECT
+                    id,
+                    course_name,
+                    course_code,
+                    course_description,
+                    prerequisites,
+                    url
+                FROM courses
+                ORDER BY course_code
+                """
+            )
+            return [dict(row) for row in cursor.fetchall()]
+        except psycopg2.Error as e:
+            print(f"Error fetching all courses: {e}", file=sys.stderr)
+            self.conn.rollback()
+            raise
+        finally:
+            cursor.close()
     
     def close(self):
         if self.conn:
