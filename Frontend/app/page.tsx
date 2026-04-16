@@ -28,6 +28,9 @@ export default function Home() {
   const [conversationHistory, setConversationHistory] = useState<ConversationMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [multiSelected, setMultiSelected] = useState<string[]>([]);
+  const [singleSelected, setSingleSelected] = useState<string>('');
+  const [fullscreenMessageIdx, setFullscreenMessageIdx] = useState<number | null>(null);
+  const scheduleMessageRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const suggestedQuestions = [
     "Generate a course schedule",
@@ -40,6 +43,17 @@ export default function Home() {
 
   useEffect(() => {
     scrollToBottom();
+  }, [messages]);
+
+  useEffect(() => {
+    const lastBot = [...messages].reverse().find((m) => m.role === 'bot');
+    const prompt = lastBot ? getPromptOptions(lastBot.content) : null;
+    if (!prompt || prompt.kind !== 'multi') {
+      setMultiSelected([]);
+    }
+    if (!prompt || prompt.kind !== 'single') {
+      setSingleSelected('');
+    }
   }, [messages]);
 
   const sendQuestion = async (questionText: string) => {
@@ -90,6 +104,57 @@ export default function Home() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await sendQuestion(message);
+  };
+
+  const isScheduleMessage = (content: string): boolean => {
+    const low = content.toLowerCase();
+    return low.includes("<table") && low.includes("### totals");
+  };
+
+  const toggleFullscreen = async (index: number) => {
+    const target = scheduleMessageRefs.current[index];
+    if (!target) return;
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+        setFullscreenMessageIdx(null);
+        return;
+      }
+      await target.requestFullscreen();
+      setFullscreenMessageIdx(index);
+    } catch {
+      // no-op: browser may deny fullscreen in unsupported contexts
+    }
+  };
+
+  const downloadSchedule = (index: number) => {
+    const target = scheduleMessageRefs.current[index];
+    if (!target) return;
+    const htmlContent = target.innerHTML;
+    const html = `<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>ISAT Schedule</title>
+    <style>
+      body { font-family: Georgia, serif; margin: 24px; color: #222; }
+      table { width: 100%; border-collapse: collapse; margin: 10px 0 18px; font-size: 14px; }
+      th, td { border: 1px solid #ccc; padding: 6px 8px; text-align: left; vertical-align: top; }
+      th { background: #f2edf6; }
+      h3 { margin: 16px 0 8px; }
+    </style>
+  </head>
+  <body>${htmlContent}</body>
+</html>`;
+    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "isat_schedule.html";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
   };
 
   const getPromptOptions = (content: string): PromptOptions | null => {
@@ -169,73 +234,106 @@ export default function Home() {
             )}
             {messages.map((msg, index) => (
               <div key={index} className={`message ${msg.role}`}>
-                <div className="message-content">
-                  {msg.role === 'bot' ? (
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm]}
-                      rehypePlugins={[rehypeRaw]}
-                      components={{
-                        a: ({ node, ...props }) => (
-                          <a {...props} target="_blank" rel="noopener noreferrer" />
-                        ),
-                      }}
-                    >
-                      {msg.content}
-                    </ReactMarkdown>
-                  ) : (
-                    msg.content
-                  )}
-                </div>
-                {msg.role === 'bot' && index === messages.length - 1 && (() => {
-                  const prompt = getPromptOptions(msg.content);
-                  if (!prompt) return null;
-                  if (prompt.kind === 'single') {
+                <div className="message-stack">
+                  <div
+                    className={`message-content ${msg.role === 'bot' && isScheduleMessage(msg.content) ? 'schedule-message-content' : ''}`}
+                    ref={(el) => {
+                      if (msg.role === 'bot' && isScheduleMessage(msg.content)) {
+                        scheduleMessageRefs.current[index] = el;
+                      }
+                    }}
+                  >
+                    {msg.role === 'bot' ? (
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        rehypePlugins={[rehypeRaw]}
+                        components={{
+                          a: ({ node, ...props }) => (
+                            <a {...props} target="_blank" rel="noopener noreferrer" />
+                          ),
+                        }}
+                      >
+                        {msg.content}
+                      </ReactMarkdown>
+                    ) : (
+                      msg.content
+                    )}
+                  </div>
+                  {msg.role === 'bot' && index === messages.length - 1 && (() => {
+                    const prompt = getPromptOptions(msg.content);
+                    if (!prompt) return null;
+                    if (prompt.kind === 'single') {
+                      return (
+                        <div className="prompt-options-panel">
+                          <div className="suggested-questions">
+                            {prompt.options.map((opt) => (
+                              <button
+                                key={opt}
+                                type="button"
+                                className={`suggestion-chip ${singleSelected === opt ? 'selected' : ''}`}
+                                onClick={() => {
+                                  setSingleSelected(opt);
+                                  void sendQuestion(opt);
+                                }}
+                                disabled={isLoading}
+                              >
+                                {opt}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    }
                     return (
-                      <div className="suggested-questions" style={{ marginTop: 8 }}>
-                        {prompt.options.map((opt) => (
+                      <div className="prompt-options-panel">
+                        <div className="suggested-questions">
+                          {prompt.options.map((opt) => (
+                            <button
+                              key={opt}
+                              type="button"
+                              className={`suggestion-chip ${multiSelected.includes(opt) ? 'selected' : ''}`}
+                              onClick={() => toggleMultiOption(opt)}
+                              disabled={isLoading}
+                            >
+                              {opt}
+                            </button>
+                          ))}
                           <button
-                            key={opt}
                             type="button"
-                            className="suggestion-chip"
-                            onClick={() => sendQuestion(opt)}
-                            disabled={isLoading}
+                            className={`suggestion-chip submit-chip ${multiSelected.length === 4 ? 'selected' : ''}`}
+                            onClick={() => {
+                              if (multiSelected.length === 4) {
+                                void sendQuestion(multiSelected.join(', '));
+                                setMultiSelected([]);
+                              }
+                            }}
+                            disabled={isLoading || multiSelected.length !== 4}
                           >
-                            {opt}
+                            Submit 4 Courses
                           </button>
-                        ))}
+                        </div>
                       </div>
                     );
-                  }
-                  return (
-                    <div className="suggested-questions" style={{ marginTop: 8 }}>
-                      {prompt.options.map((opt) => (
-                        <button
-                          key={opt}
-                          type="button"
-                          className="suggestion-chip"
-                          onClick={() => toggleMultiOption(opt)}
-                          disabled={isLoading}
-                          style={{ opacity: multiSelected.includes(opt) ? 1 : 0.85 }}
-                        >
-                          {opt}
-                        </button>
-                      ))}
+                  })()}
+                  {msg.role === 'bot' && isScheduleMessage(msg.content) && (
+                    <div className="schedule-actions">
                       <button
                         type="button"
                         className="suggestion-chip"
-                        onClick={() => {
-                          if (multiSelected.length === 4) {
-                            void sendQuestion(multiSelected.join(', '));
-                            setMultiSelected([]);
-                          }
-                        }}
-                        disabled={isLoading || multiSelected.length !== 4}
+                        onClick={() => toggleFullscreen(index)}
                       >
-                        Submit 4 Courses
+                        {fullscreenMessageIdx === index ? "Minimize" : "Fullscreen"}
+                      </button>
+                      <button
+                        type="button"
+                        className="suggestion-chip"
+                        onClick={() => downloadSchedule(index)}
+                      >
+                        Download
                       </button>
                     </div>
-                  );
-                })()}
+                  )}
+                </div>
               </div>
             ))}
             {isLoading && (

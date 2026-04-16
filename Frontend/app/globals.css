@@ -120,6 +120,23 @@ body {
   transform: translateY(-1px);
 }
 
+.suggestion-chip.selected {
+  background: linear-gradient(155deg, #e8e1e8 0%, #dcd1e4 45%, #b099c4 100%);
+  border-color: rgba(69, 0, 132, 0.45);
+  color: #221532;
+  box-shadow: inset 0 0 0 1px rgba(69, 0, 132, 0.2);
+}
+
+.prompt-options-panel {
+  display: block;
+  width: fit-content;
+  max-width: 92%;
+  padding: 8px 10px 4px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.28);
+  border: 1px solid rgba(69, 0, 132, 0.16);
+}
+
 .suggestion-chip:disabled {
   opacity: 0.55;
   cursor: not-allowed;
@@ -140,6 +157,20 @@ body {
 .message {
   display: flex;
   margin-bottom: 8px;
+}
+
+.message-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 100%;
+}
+
+.schedule-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 2px;
 }
 
 .message.user {
@@ -202,6 +233,29 @@ body {
   color: #333;
   border: 1px solid #e0e0e0;
   border-bottom-left-radius: 4px;
+}
+
+.message.bot .message-content.schedule-message-content {
+  max-width: 96%;
+}
+
+.schedule-message-content:fullscreen,
+.schedule-message-content:-webkit-full-screen {
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 20px 24px !important;
+  box-sizing: border-box;
+  overflow: auto;
+  border-radius: 0 !important;
+  border: none !important;
+  background: linear-gradient(155deg, #ffffff 0%, #ede9f0 45%, #dbd2e2 100%) !important;
+}
+
+.schedule-message-content:fullscreen table,
+.schedule-message-content:-webkit-full-screen table {
+  font-size: 0.98rem;
 }
 
 .message-content.loading {

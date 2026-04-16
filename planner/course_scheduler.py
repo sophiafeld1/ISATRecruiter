@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from functools import lru_cache
 from typing import TypedDict
 
+from database.db_write import LinkDatabase, is_trustworthy_abet_course_title
+
 class Course(TypedDict):
     code: str
     title: str
@@ -68,6 +70,35 @@ def _course_level(code: str) -> int:
 
 
 @lru_cache(maxsize=1)
+def _catalog_map_abet_first() -> dict[str, dict]:
+    db = LinkDatabase()
+    try:
+        out: dict[str, dict] = {}
+        for row in db.fetch_course_catalog_abet_first():
+            code = normalize_course_code(row.get("course_code") or "")
+            if code:
+                out[code] = row
+        return out
+    finally:
+        db.close()
+
+
+def _hydrate_course_metadata(course: Course) -> Course:
+    row = _catalog_map_abet_first().get(normalize_course_code(course["code"]))
+    if not row:
+        return course
+    out = dict(course)
+    name = row.get("course_name")
+    if name and is_trustworthy_abet_course_title(str(name).strip()):
+        out["title"] = str(name).strip()
+    prereq_text = row.get("prerequisites") or ""
+    prereqs = [normalize_course_code(m.group(0)) for m in re.finditer(r"ISAT\s*\d{3}[A-Z]?", prereq_text, re.IGNORECASE)]
+    if prereqs:
+        out["prereqs"] = prereqs
+    return out
+
+
+@lru_cache(maxsize=1)
 def load_program_rules(program_schedules_path: str) -> ProgramRules:
     with open(program_schedules_path, encoding="utf-8") as f:
         text = f.read()
@@ -90,7 +121,8 @@ def load_program_rules(program_schedules_path: str) -> ProgramRules:
 
     # Trusted first-year recommendation (from issues/methods/social-context core in program_schedules.md).
     first_year_fall_codes = ["ISAT 112", "ISAT 113", "ISAT 113L", "ISAT 151", "ISAT 171"]
-    first_year_spring_codes = ["ISAT 211", "ISAT 212", "ISAT 152", "ISAT 251", "ISAT 271"]
+    # Keep freshman spring lighter (12-15 credits target). ISAT 271 moves to sophomore-year tail.
+    first_year_spring_codes = ["ISAT 211", "ISAT 212", "ISAT 152", "ISAT 251"]
     first_year_fall = [all_courses[c] for c in first_year_fall_codes if c in all_courses]
     first_year_spring = [all_courses[c] for c in first_year_spring_codes if c in all_courses]
     stage2 = [all_courses[c] for c in ["ISAT 190", "ISAT 290", "ISAT 390", "ISAT 391"] if c in all_courses]
@@ -164,12 +196,14 @@ class CourseScheduler:
         # Build full four-year requirements for a standard path.
         required_tail = self._dedupe_courses(
             [{"code": "ISAT 252", "title": "Programming and Problem Solving", "credits": 3, "category": "Core", "prereqs": []},
-             {"code": "ISAT 300", "title": "Applied Computing, Instrumentation and Measurement", "credits": 3, "category": "Core", "prereqs": []}]
+             {"code": "ISAT 300", "title": "Applied Computing, Instrumentation and Measurement", "credits": 3, "category": "Core", "prereqs": []},
+             {"code": "ISAT 271", "title": "Technology, Science and Society", "credits": 3, "category": "Core", "prereqs": []}]
             + self.rules.stage2
             + self.rules.sector_by_name.get(sector, [])
             + selected_courses
             + self.rules.stage5
         )
+        required_tail = [_hydrate_course_metadata(c) for c in required_tail]
 
         labels = [
             "First Year Fall",
@@ -182,11 +216,13 @@ class CourseScheduler:
             "Fourth Year Spring",
         ]
         semesters: list[Semester] = [
-            {"term": "First Year Fall", "courses": list(self.rules.first_year_fall), "total_credits": sum(c["credits"] for c in self.rules.first_year_fall)},
-            {"term": "First Year Spring", "courses": list(self.rules.first_year_spring), "total_credits": sum(c["credits"] for c in self.rules.first_year_spring)},
+            {"term": "First Year Fall", "courses": [_hydrate_course_metadata(c) for c in self.rules.first_year_fall], "total_credits": sum(c["credits"] for c in self.rules.first_year_fall)},
+            {"term": "First Year Spring", "courses": [_hydrate_course_metadata(c) for c in self.rules.first_year_spring], "total_credits": sum(c["credits"] for c in self.rules.first_year_spring)},
         ]
         for label in labels[2:]:
             semesters.append({"term": label, "courses": [], "total_credits": 0})
+        # Keep freshman year lighter; later terms can be heavier.
+        term_credit_caps = [15, 15, 18, 18, 18, 18, 18, 18]
 
         # Honor sequence constraints and level progression.
         # Index map: 0/1=first year, 2/3=second year, 4/5=third year, 6/7=fourth year.
@@ -248,10 +284,12 @@ class CourseScheduler:
             idx = min_index_for_course(code)
             while idx >= len(semesters):
                 semesters.append({"term": f"Additional Semester {len(semesters) - 7}", "courses": [], "total_credits": 0})
-            while idx < len(semesters) and semesters[idx]["total_credits"] + course["credits"] > 15:
+                term_credit_caps.append(18)
+            while idx < len(semesters) and semesters[idx]["total_credits"] + course["credits"] > term_credit_caps[idx]:
                 idx += 1
                 while idx >= len(semesters):
                     semesters.append({"term": f"Additional Semester {len(semesters) - 7}", "courses": [], "total_credits": 0})
+                    term_credit_caps.append(18)
             semesters[idx]["courses"].append(course)
             semesters[idx]["total_credits"] += course["credits"]
 
@@ -260,12 +298,16 @@ class CourseScheduler:
         gen_ed_needed = max(0, 120 - planned_core)
         sem_idx = 0
         while gen_ed_needed > 0:
-            sem = semesters[sem_idx % len(semesters)]
+            idx = sem_idx % len(semesters)
+            sem = semesters[idx]
             sem_idx += 1
-            if sem["total_credits"] + 3 <= 18:
+            if sem["total_credits"] + 3 <= term_credit_caps[idx]:
                 sem["courses"].append(_course("GEN ED", "General Education", 3, "General Education"))
                 sem["total_credits"] += 3
                 gen_ed_needed -= 3
+
+        for sem in semesters:
+            sem["total_credits"] = sum(c["credits"] for c in sem["courses"])
 
         totals = {
             "planned_credits": sum(s["total_credits"] for s in semesters),
@@ -274,11 +316,6 @@ class CourseScheduler:
 
         notes = []
         notes.append(f"Sector selected: {scheduler_input['sector'].title()}")
-        notes.append("Scheduling rules were applied from program_schedules.md, including capstone sequencing within 4 years.")
-        if selected:
-            notes.append(
-                f"Your selected concentration courses have been saved for future planning: {', '.join(selected)}."
-            )
         return {
             "semesters": semesters,
             "notes": notes,

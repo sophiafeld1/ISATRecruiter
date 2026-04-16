@@ -9,6 +9,7 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 from planner.course_scheduler import CourseScheduler, normalize_course_code
+from database.db_write import LinkDatabase, is_trustworthy_abet_course_title
 
 
 COURSE_RE = re.compile(r"ISAT\s*\d{3}[A-Z]?", re.IGNORECASE)
@@ -93,6 +94,10 @@ class TestCourseSchedulerAccuracy(unittest.TestCase):
                 self.assertEqual(len(output["semesters"]), 8)
                 self.assertEqual(output["totals"]["planned_credits"], 120)
                 self.assertEqual(output["totals"]["degree_target"], 120)
+                self.assertGreaterEqual(output["semesters"][0]["total_credits"], 12)
+                self.assertLessEqual(output["semesters"][0]["total_credits"], 15)
+                self.assertGreaterEqual(output["semesters"][1]["total_credits"], 12)
+                self.assertLessEqual(output["semesters"][1]["total_credits"], 15)
 
                 # 2) Course validity from requirements/program docs
                 generated_codes = _flatten_schedule_codes(output)
@@ -132,7 +137,52 @@ class TestCourseSchedulerAccuracy(unittest.TestCase):
                     "public interest technology",
                 ]:
                     self.assertIn(name, about_lower)
-                print("Subtest passed.")
+
+                # Semester headers must match the sum of listed course rows (no drift).
+                for sem in output["semesters"]:
+                    self.assertEqual(
+                        sem["total_credits"],
+                        sum(c["credits"] for c in sem["courses"]),
+                        msg=sem["term"],
+                    )
+
+    def test_abet_title_sanity_rejects_boilerplate(self) -> None:
+        bad = (
+            "Please use the following format for the course syllabi "
+            "(2 pages maximum in Times New Roman 12-point font)"
+        )
+        self.assertFalse(is_trustworthy_abet_course_title(bad))
+        self.assertTrue(is_trustworthy_abet_course_title("Systems Integration"))
+
+    def test_abet_is_primary_source_when_available(self) -> None:
+        """
+        ABET syllabi override the courses table when both exist; course titles from ABET
+        are used only when they pass sanity checks (otherwise the catalog name is kept).
+        """
+        db = LinkDatabase()
+        try:
+            abet_rows = db.fetch_all_abet_syllabi()
+            if not abet_rows:
+                self.skipTest("No ABET rows found to validate precedence.")
+
+            merged = db.fetch_course_catalog_abet_first()
+            merged_by_code = {row["course_code"]: row for row in merged}
+            abet_codes = {normalize_course_code(row.get("course_code") or "") for row in abet_rows}
+            abet_codes = {c for c in abet_codes if c}
+
+            # Validate precedence on a representative subset of ABET codes present in merged catalog.
+            checked = 0
+            for code in sorted(abet_codes):
+                row = merged_by_code.get(code)
+                if not row:
+                    continue
+                self.assertEqual(row.get("source"), "abet_syllabi", msg=f"Expected ABET source for {code}")
+                checked += 1
+                if checked >= 10:
+                    break
+            self.assertGreater(checked, 0, "No overlapping ABET/catalog course codes were validated.")
+        finally:
+            db.close()
 
 
 if __name__ == "__main__":
