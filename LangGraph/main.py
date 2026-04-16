@@ -22,6 +22,7 @@ from langgraph.graph import StateGraph, END
 from langchain_openai import OpenAIEmbeddings
 from openai import OpenAI
 from database.db_write import LinkDatabase
+from planner.course_scheduler import CourseScheduler, normalize_course_code
 
 # Load .env file from project root
 load_dotenv(dotenv_path=os.path.join(project_root, '.env'))
@@ -29,123 +30,153 @@ load_dotenv(dotenv_path=os.path.join(project_root, '.env'))
 # Initialize clients
 client = OpenAI()
 embeddings_model = OpenAIEmbeddings(model="text-embedding-3-small")
+scheduler_tool = CourseScheduler(project_root=project_root)
 
 _ISAT_COURSE_RE = re.compile(r"\bisat\s*(\d{3})\b", re.IGNORECASE)
-_SCHEDULE_RE = re.compile(r"\b(course\s+schedule|schedule|plan\s+courses|academic\s+plan)\b", re.IGNORECASE)
+_SCHEDULE_RE = re.compile(r"\b(course\s+schedule|schedule|plan\s+courses|plan\s+my\s+courses|academic\s+plan)\b", re.IGNORECASE)
+_SCHEDULE_CONTEXT_RE = re.compile(
+    r"what concentration do you want|which sector do you want to complete|choose exactly 4 concentration courses",
+    re.IGNORECASE,
+)
+_INTAKE_STATES = Literal[
+    "awaiting_concentration",
+    "awaiting_sector",
+    "awaiting_concentration_course_selection",
+    "ready_to_generate_schedule",
+]
 
-
-def _load_schedule_template() -> str:
-    """
-    Load schedule formatting instructions from templates.md.
-    Returns empty string if file is unavailable.
-    """
-    path = os.path.join(project_root, "templates.md")
-    try:
-        with open(path, encoding="utf-8") as f:
-            return f.read().strip()
-    except OSError:
-        return ""
-
-
-def _load_schedule_rules_reference() -> str:
-    """
-    Load hard schedule-planner rules from ISAT_RAG_requirements_reference.md.
-    Returns empty string if file is unavailable.
-    """
-    path = os.path.join(project_root, "ISAT_RAG_requirements_reference.md")
-    try:
-        with open(path, encoding="utf-8") as f:
-            return f.read().strip()
-    except OSError:
-        return ""
+_CONCENTRATION_ALIASES = {
+    "applied biotechnology": ["applied biotechnology", "biotechnology", "biotech"],
+    "applied computing": ["applied computing", "computing"],
+    "energy": ["energy"],
+    "environment and sustainability": ["environment and sustainability", "environment", "sustainability"],
+    "industrial and manufacturing systems": ["industrial and manufacturing systems", "industrial", "manufacturing"],
+    "public interest technology and science": ["public interest technology and science", "public interest", "public sector", "public"],
+    "tailored": ["tailored"],
+}
 
 
 def _is_schedule_request(question: str) -> bool:
     return bool(_SCHEDULE_RE.search(question or ""))
 
 
-def _is_second_year_standing(user_text: str) -> bool:
-    """True if the student indicated they are in their second year (sophomore)."""
-    return bool(
-        re.search(
-            r"\b(second year|sophomore|soph\.?|year\s*2|2nd\s*year|2\s*st\s*year)\b",
-            user_text,
-        )
-    )
-
-
-def _has_prior_courses_disclosure(user_text: str) -> bool:
-    """
-    True if the student said what ISAT/JMU courses they already completed,
-    or explicitly said they have not taken any yet.
-    """
-    if re.search(r"\bisat\s*\d{3}\b", user_text):
+def _is_schedule_context(question: str, conversation_history: list[dict]) -> bool:
+    if _is_schedule_request(question):
         return True
-    if re.search(
-        r"\b(none|no\s+prior|no\s+isat|not\s+yet|starting\s+with|first\s+isat|"
-        r"haven'?t\s+taken|have\s+not\s+taken)\b",
-        user_text,
-    ) and re.search(r"\b(class|classes|course|courses|isat)\b", user_text):
+    if _SCHEDULE_CONTEXT_RE.search(question or ""):
         return True
-    if re.search(
-        r"\b(took|taken|completed|finished|passed)\b.*\b(class|classes|course|courses|isat)\b",
-        user_text,
-    ):
-        return True
-    if re.search(r"\bi\s*('?ve|ve)\s+(taken|completed|finished)\b", user_text):
-        return True
+    for msg in reversed(conversation_history[-8:]):
+        if msg.get("role") == "assistant" and _SCHEDULE_CONTEXT_RE.search(msg.get("content") or ""):
+            return True
     return False
 
 
-def _missing_schedule_fields(question: str, conversation_history: list[dict]) -> list[str]:
-    """
-    Required intake fields for schedule generation:
-    concentration, sector, current year, start semester; for second-year students,
-    which courses they have already taken.
-    """
-    user_text = " ".join(
-        [question]
-        + [
-            (m.get("content") or "")
-            for m in conversation_history
-            if m.get("role") == "user"
-        ]
-    ).lower()
+def _parse_concentration(user_text: str) -> str | None:
+    low = (user_text or "").lower()
+    for key, aliases in _CONCENTRATION_ALIASES.items():
+        if any(alias in low for alias in aliases):
+            return key
+    return None
 
-    has_concentration = bool(
-        re.search(
-            r"\bconcentration\b|applied biotechnology|applied computing|energy|"
-            r"environment|sustainability|industrial|manufacturing|public interest",
-            user_text,
-        )
-    )
-    has_sector = bool(re.search(r"\bsector\b|two sectors|strategic sector", user_text))
-    has_year = bool(
-        re.search(
-            r"\b(first year|second year|third year|fourth year|freshman|sophomore|junior|senior)\b|"
-            r"\byear\s*[1-4]\b",
-            user_text,
-        )
-    )
-    has_start_semester = bool(
-        re.search(r"\b(start|starting)\s+(fall|spring|summer)\s+20\d{2}\b|\b(fall|spring|summer)\s+20\d{2}\b", user_text)
-    )
 
-    missing: list[str] = []
-    if not has_concentration:
-        missing.append("Which concentration do you want to complete?")
-    if not has_sector:
-        missing.append("Which sector(s) do you want to complete?")
-    if not has_year:
-        missing.append("What is your current year/standing (first-year, sophomore, junior, senior, 5th year +)?")
-    if not has_start_semester:
-        missing.append("What is your start semester (for example: Fall 2026)?")
-    if _is_second_year_standing(user_text) and not _has_prior_courses_disclosure(user_text):
-        missing.append(
-            "Which classes have you already completed (course codes or names)? "
-            "If you have not completed any relevant courses yet, say that clearly."
-        )
-    return missing
+def _parse_sector(user_text: str) -> str | None:
+    return _parse_concentration(user_text)
+
+
+def _extract_course_codes(user_text: str) -> list[str]:
+    out: list[str] = []
+    seen: set[str] = set()
+    for raw in re.findall(r"(?:ISAT\s*)?\d{3}[A-Za-z]?", user_text or "", re.IGNORECASE):
+        code = normalize_course_code(raw)
+        if code and code not in seen:
+            seen.add(code)
+            out.append(code)
+    return out
+
+
+def _extract_selection_text(question: str, conversation_history: list[dict]) -> str | None:
+    for i in range(len(conversation_history) - 1, -1, -1):
+        msg = conversation_history[i]
+        if msg.get("role") != "assistant":
+            continue
+        if "choose exactly 4 concentration courses" not in (msg.get("content") or "").lower():
+            continue
+        for follow in conversation_history[i + 1:]:
+            if follow.get("role") == "user":
+                return follow.get("content") or ""
+        return None
+    return None
+
+
+def _extract_sector_text(question: str, conversation_history: list[dict]) -> str | None:
+    for i in range(len(conversation_history) - 1, -1, -1):
+        msg = conversation_history[i]
+        if msg.get("role") != "assistant":
+            continue
+        if "which sector do you want to complete" not in (msg.get("content") or "").lower():
+            continue
+        for follow in conversation_history[i + 1:]:
+            if follow.get("role") == "user":
+                return follow.get("content") or ""
+        return None
+    return None
+
+
+def _parse_selected_options(selection_text: str | None, options: list[dict], choose_count: int = 4) -> list[str]:
+    if not selection_text:
+        return []
+    option_codes = [normalize_course_code(o["code"]) for o in options]
+    selected = [c for c in _extract_course_codes(selection_text) if c in set(option_codes)]
+    for token in re.findall(r"\b([1-9]\d?)\b", selection_text):
+        idx = int(token) - 1
+        if 0 <= idx < len(option_codes):
+            selected.append(option_codes[idx])
+    # preserve order + dedupe
+    out: list[str] = []
+    seen: set[str] = set()
+    for c in selected:
+        if c not in seen:
+            seen.add(c)
+            out.append(c)
+    return out[:choose_count]
+
+
+def _get_intake_state(
+    question: str,
+    conversation_history: list[dict],
+) -> tuple[_INTAKE_STATES, dict]:
+    combined_user_text = " ".join(
+        [(m.get("content") or "") for m in conversation_history if m.get("role") == "user"] + [question]
+    )
+    concentration = _parse_concentration(combined_user_text)
+    if not concentration:
+        return "awaiting_concentration", {}
+
+    sector_text = _extract_sector_text(question, conversation_history)
+    if sector_text is None and "which sector do you want to complete" in " ".join(
+        [(m.get("content") or "").lower() for m in conversation_history if m.get("role") == "assistant"]
+    ):
+        sector_text = question
+    sector = _parse_sector(sector_text or "")
+    if not sector:
+        return "awaiting_sector", {"concentration": concentration}
+
+    options = scheduler_tool.concentration_options(concentration)
+    selection_text = _extract_selection_text(question, conversation_history) or question
+    selected_courses = _parse_selected_options(selection_text, options, choose_count=4)
+    if options and len(selected_courses) < 4:
+        return "awaiting_concentration_course_selection", {
+            "concentration": concentration,
+            "sector": sector,
+            "options": options,
+            "selected_courses": selected_courses,
+        }
+
+    return "ready_to_generate_schedule", {
+        "concentration": concentration,
+        "sector": sector,
+        "selected_courses": selected_courses,
+    }
 
 
 def _expand_retrieval_query(question: str) -> str:
@@ -212,6 +243,71 @@ def _prioritize_course_mentions(
     return (exact + rest)[:top_k]
 
 
+def _format_scheduler_output(
+    concentration: str,
+    sector: str,
+    selected_courses: list[str],
+    schedule_output: dict,
+) -> str:
+    semesters = schedule_output.get("semesters", [])
+    notes = schedule_output.get("notes", [])
+    totals = schedule_output.get("totals", {})
+
+    output = [
+        f"### Concentration: {concentration.title()}",
+        f"### Sector: {sector.title()}",
+    ]
+    for sem in semesters:
+        output.append(f"### {sem['term']} ({sem['total_credits']} credits)")
+        output.append("| Course | Title | Credits |")
+        output.append("| --- | --- | --- |")
+        for c in sem["courses"]:
+            output.append(f"| {c['code']} | {c['title']} | {c['credits']} |")
+        output.append("")
+
+    output.append("### Totals")
+    output.append(f"- Planned Credits: {totals.get('planned_credits', 0)} / {totals.get('degree_target', 120)}")
+    output.append("### Notes")
+    output.append(f"- Concentration courses selected: {', '.join(selected_courses) if selected_courses else 'None selected'}")
+    for note in notes:
+        output.append(f"- {note}")
+    return "\n".join(output)
+
+
+def _handle_schedule_intake(question: str, conversation_history: list[dict]) -> str:
+    state, payload = _get_intake_state(question, conversation_history)
+
+    if state == "awaiting_concentration":
+        return "What concentration do you want to complete?"
+
+    if state == "awaiting_sector":
+        sectors = ", ".join(scheduler_tool.sector_options())
+        return f"Which sector do you want to complete? Available sectors: {sectors}."
+
+    if state == "awaiting_concentration_course_selection":
+        concentration = payload["concentration"]
+        options = payload["options"]
+        codes = ", ".join(normalize_course_code(c["code"]) for c in options)
+        return f"For {concentration.title()}, choose exactly 4 concentration courses from: {codes}."
+
+    concentration = payload["concentration"]
+    sector = payload["sector"]
+    selected_courses = payload["selected_courses"]
+    schedule_output = scheduler_tool.plan(
+        {
+            "concentration": concentration,
+            "sector": sector,
+            "selected_concentration_courses": selected_courses,
+        }
+    )
+    return _format_scheduler_output(
+        concentration=concentration,
+        sector=sector,
+        selected_courses=selected_courses,
+        schedule_output=schedule_output,
+    )
+
+
 class GraphState(TypedDict):
     """State for the LangGraph workflow."""
     question: str
@@ -228,8 +324,8 @@ def classify_question(state: GraphState) -> GraphState:
     question = state["question"]
     conversation_history = state.get("conversation_history", [])
 
-    # Hard-route schedule generation requests through RAG path so intake/template logic runs.
-    if _is_schedule_request(question):
+    # Hard-route schedule generation and active intake context through schedule tool flow.
+    if _is_schedule_context(question, conversation_history):
         return {
             **state,
             "requires_rag": True
@@ -276,6 +372,8 @@ def retrieve_chunks(state: GraphState) -> GraphState:
     Retrieve relevant chunks from the database using RAG.
     """
     question = state["question"]
+    if _is_schedule_context(question, state.get("conversation_history", [])):
+        return {**state, "chunks": []}
     top_k = 8
     retrieval_text = _expand_retrieval_query(question)
     query_embedding = embeddings_model.embed_query(retrieval_text)
@@ -350,23 +448,11 @@ def answer_with_rag(state: GraphState) -> GraphState:
     question = state["question"]
     chunks = state.get("chunks", [])
     conversation_history = state.get("conversation_history", [])
-    schedule_template = _load_schedule_template()
-    schedule_rules = _load_schedule_rules_reference()
-
-    # Intake gate: gather required planning fields before generating a schedule.
-    if _is_schedule_request(question):
-        missing = _missing_schedule_fields(question, conversation_history)
-        if missing:
-            prompts = "\n".join([f"- {m}" for m in missing])
-            answer = (
-                "Great, I can generate a course schedule. Before I build it, please provide:\n"
-                f"{prompts}\n\n"
-                "Once you provide these, I will generate the schedule using the required table template."
-            )
-            return {
-                **state,
-                "answer": answer,
-            }
+    if _is_schedule_context(question, conversation_history):
+        return {
+            **state,
+            "answer": _handle_schedule_intake(question, conversation_history),
+        }
     
     if not chunks:
         print("\nNo chunks found in database!", file=sys.stderr)
@@ -414,33 +500,6 @@ Suggested style (not required):
 
 Context:
 """ + context
-    if schedule_template:
-        system_message += (
-            "\n\nFormatting reference for schedule requests (from templates.md):\n"
-            f"{schedule_template}\n"
-            "When the user asks for a course schedule/plan, follow that template strictly. "
-            "Always produce **all four** year tables (First through Fourth Year). "
-            "Do not skip to Third Year because the student listed many courses or because of class standing. "
-            "Put completed courses in a **Completed coursework** summary table (grey `<span class=\"past-course\">` "
-            "in each cell) and **also** place those courses in the correct semester/year cells inside the four-year "
-            "tables with the same grey spans. "
-            "Include the full holistic sequence (**ISAT 190, 290, 390, 391**) unless already completed; do not omit 290/390/391. "
-            "If electives are not fully chosen yet, use placeholders like "
-            "'Concentration Course 1 (Applied Computing)'. "
-            "Build General Education directly into the schedule using rows labeled "
-            "'General Education Course' as needed, and target the General Education requirement of 41 credits. "
-            "A complete schedule must end with **Total Planned Credits:** 120 / 120 and "
-            "**Total General Education Credits Planned:** 41 / 41 as in the template. "
-            "After the schedule table, always include a section listing elective choices available "
-            "for the selected concentration and remind the student how many elective credits they must pick."
-        )
-    if schedule_rules:
-        system_message += (
-            "\n\nHard planning rules reference (from ISAT_RAG_requirements_reference.md):\n"
-            f"{schedule_rules}\n"
-            "For course schedule generation, follow these rules as authoritative constraints."
-        )
-    
     # Build messages with conversation history
     messages = [{"role": "system", "content": system_message}]
     

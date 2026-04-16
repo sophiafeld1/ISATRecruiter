@@ -17,11 +17,17 @@ interface ConversationMessage {
   content: string;
 }
 
+interface PromptOptions {
+  kind: 'single' | 'multi';
+  options: string[];
+}
+
 export default function Home() {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversationHistory, setConversationHistory] = useState<ConversationMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [multiSelected, setMultiSelected] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const suggestedQuestions = [
     "Generate a course schedule",
@@ -84,6 +90,37 @@ export default function Home() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await sendQuestion(message);
+  };
+
+  const getPromptOptions = (content: string): PromptOptions | null => {
+    const text = content.toLowerCase();
+    if (text.includes('what concentration do you want to complete')) {
+      return {
+        kind: 'single',
+        options: ['Applied Biotechnology', 'Applied Computing', 'Energy', 'Environment and Sustainability', 'Industrial and Manufacturing Systems'],
+      };
+    }
+    if (text.includes('which sector do you want to complete')) {
+      return {
+        kind: 'single',
+        options: ['Applied Biotechnology', 'Applied Computing', 'Energy', 'Environment and Sustainability', 'Industrial and Manufacturing Systems'],
+      };
+    }
+    if (text.includes('choose exactly 4 concentration courses from:')) {
+      const match = content.match(/choose exactly 4 concentration courses from:\s*([^.]+)/i);
+      if (!match) return null;
+      const options = match[1].split(',').map((s) => s.trim()).filter(Boolean);
+      return { kind: 'multi', options };
+    }
+    return null;
+  };
+
+  const toggleMultiOption = (opt: string) => {
+    setMultiSelected((prev) => {
+      if (prev.includes(opt)) return prev.filter((v) => v !== opt);
+      if (prev.length >= 4) return prev;
+      return [...prev, opt];
+    });
   };
 
   return (
@@ -149,6 +186,56 @@ export default function Home() {
                     msg.content
                   )}
                 </div>
+                {msg.role === 'bot' && index === messages.length - 1 && (() => {
+                  const prompt = getPromptOptions(msg.content);
+                  if (!prompt) return null;
+                  if (prompt.kind === 'single') {
+                    return (
+                      <div className="suggested-questions" style={{ marginTop: 8 }}>
+                        {prompt.options.map((opt) => (
+                          <button
+                            key={opt}
+                            type="button"
+                            className="suggestion-chip"
+                            onClick={() => sendQuestion(opt)}
+                            disabled={isLoading}
+                          >
+                            {opt}
+                          </button>
+                        ))}
+                      </div>
+                    );
+                  }
+                  return (
+                    <div className="suggested-questions" style={{ marginTop: 8 }}>
+                      {prompt.options.map((opt) => (
+                        <button
+                          key={opt}
+                          type="button"
+                          className="suggestion-chip"
+                          onClick={() => toggleMultiOption(opt)}
+                          disabled={isLoading}
+                          style={{ opacity: multiSelected.includes(opt) ? 1 : 0.85 }}
+                        >
+                          {opt}
+                        </button>
+                      ))}
+                      <button
+                        type="button"
+                        className="suggestion-chip"
+                        onClick={() => {
+                          if (multiSelected.length === 4) {
+                            void sendQuestion(multiSelected.join(', '));
+                            setMultiSelected([]);
+                          }
+                        }}
+                        disabled={isLoading || multiSelected.length !== 4}
+                      >
+                        Submit 4 Courses
+                      </button>
+                    </div>
+                  );
+                })()}
               </div>
             ))}
             {isLoading && (

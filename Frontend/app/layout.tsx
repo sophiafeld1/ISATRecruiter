@@ -18,11 +18,3 @@ export default function RootLayout({
   );
 }
 
-function AboutButton() {
-  return (
-    <button className="button">
-      About
-    </button>
-  );
-}
-

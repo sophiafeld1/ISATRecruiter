@@ -27,22 +27,22 @@ export async function POST(request: NextRequest) {
     const projectRoot = path.resolve(process.cwd(), '..');
 
     // Resolve Python executable in a robust order:
-    // 1) Active shell venv (VIRTUAL_ENV)
-    // 2) Common local venv folder names in project root
+    // 1) Project-local venv names in project root (preferred for reproducibility)
+    // 2) Active shell venv (VIRTUAL_ENV)
     // 3) System python3
     const findPython = () => {
-      const virtualEnv = process.env.VIRTUAL_ENV;
-      if (virtualEnv) {
-        const venvPython = path.join(virtualEnv, 'bin', 'python');
-        if (existsSync(venvPython)) return venvPython;
-      }
-
       const venvNames = ['ISATRecruiter', 'venv', '.venv', 'env'];
       for (const name of venvNames) {
         const venvPython = path.join(projectRoot, name, 'bin', 'python');
         if (existsSync(venvPython)) {
           return venvPython;
         }
+      }
+
+      const virtualEnv = process.env.VIRTUAL_ENV;
+      if (virtualEnv) {
+        const venvPython = path.join(virtualEnv, 'bin', 'python');
+        if (existsSync(venvPython)) return venvPython;
       }
       return 'python3';
     };
