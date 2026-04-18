@@ -56,11 +56,10 @@ After intake, begin the narrative with one explicit line, e.g. **Curriculum posi
 **Order of output:** (1) **Completed coursework** summary table when applicable, (2) **#### First Year** through **#### Fourth Year** in order (all four, always), (3) final summary lines, (4) concentration elective list.
 
 Return the schedule as Markdown tables using this exact structure.
-When concentration electives are not yet finalized, write them as:
-- Concentration Course 1 ([Selected Concentration])
-- Concentration Course 2 ([Selected Concentration])
-- Concentration Course 3 ([Selected Concentration])
-- Concentration Course 4 ([Selected Concentration])
+When the student has **already chosen** concentration electives (e.g. from intake or a prior message), list **each selected course by code and full title** (e.g. `ISAT 447. Interaction Design — 3 credits`), not placeholders like “Concentration Course 1.” Use **CONTEXT** or the application’s course list for exact titles and credits.
+
+When electives are **not** yet chosen, you may still use the **Required concentration elective options** section below with the full catalog-style list; do **not** use generic “Concentration Course 1–4” placeholders if real course codes and names are known.
+
 Use **General Education Course** entries across semesters as needed to satisfy the 41-credit General Education requirement.
 
 #### First Year

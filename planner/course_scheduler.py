@@ -69,6 +69,115 @@ def _course_level(code: str) -> int:
     return int(m.group(1)) if m else 999
 
 
+def _is_gen_ed(c: Course) -> bool:
+    return c.get("category") == "General Education" or normalize_course_code(c["code"]) == "GENED"
+
+
+def _is_isat(c: Course) -> bool:
+    return normalize_course_code(c["code"]).startswith("ISAT")
+
+
+def _gen_ed_placeholder() -> Course:
+    return _course("GEN ED", "General Education", 3, "General Education")
+
+
+def _prereqs_satisfied_before(course: Course, semester_idx: int, semesters: list[Semester]) -> bool:
+    prereqs = course.get("prereqs") or []
+    for p in prereqs:
+        pc = normalize_course_code(p)
+        found = False
+        for s in range(semester_idx):
+            for c in semesters[s]["courses"]:
+                if normalize_course_code(c["code"]) == pc:
+                    found = True
+                    break
+            if found:
+                break
+        if not found:
+            return False
+    return True
+
+
+CAPSTONE_CODES = frozenset({"ISAT 490", "ISAT 491", "ISAT 492", "ISAT 493"})
+
+
+def _rebalance_gen_ed_avoid_singles(
+    semesters: list[Semester],
+    term_credit_caps: list[int],
+    first_two_year_floor: int = 18,
+) -> None:
+    """Merge lone GEN ED rows into another semester that already has GEN ED (or room)."""
+    for _ in range(64):
+        counts = [sum(1 for c in s["courses"] if _is_gen_ed(c)) for s in semesters]
+        singles = [i for i, n in enumerate(counts) if n == 1]
+        if not singles:
+            return
+        moved = False
+        for i in singles:
+            gi = next((k for k, c in enumerate(semesters[i]["courses"]) if _is_gen_ed(c)), None)
+            if gi is None:
+                continue
+            for j in range(len(semesters)):
+                if j == i:
+                    continue
+                cap = term_credit_caps[j] if j > 3 else max(term_credit_caps[j], first_two_year_floor)
+                if counts[j] >= 1 and semesters[j]["total_credits"] + 3 <= cap:
+                    taken = semesters[i]["courses"].pop(gi)
+                    semesters[i]["total_credits"] -= 3
+                    semesters[j]["courses"].append(taken)
+                    semesters[j]["total_credits"] += 3
+                    moved = True
+                    break
+            if moved:
+                break
+        if not moved:
+            break
+
+
+def _ensure_min_two_isat_per_semester(
+    semesters: list[Semester],
+    term_credit_caps: list[int],
+    min_index_fn,
+    first_two_year_floor: int = 18,
+) -> None:
+    """Pull ISAT courses forward from earlier semesters into thin semesters (need 2+ ISAT each term)."""
+    for _ in range(120):
+        thin = [i for i, s in enumerate(semesters) if sum(1 for c in s["courses"] if _is_isat(c)) < 2]
+        if not thin:
+            return
+        moved_any = False
+        for i in thin:
+            if i == 0:
+                continue
+            for j in range(i - 1, -1, -1):
+                for ei in range(len(semesters[j]["courses"]) - 1, -1, -1):
+                    c = semesters[j]["courses"][ei]
+                    if not _is_isat(c):
+                        continue
+                    code = normalize_course_code(c["code"])
+                    if code in CAPSTONE_CODES:
+                        continue
+                    if min_index_fn(code) > i:
+                        continue
+                    if not _prereqs_satisfied_before(c, i, semesters):
+                        continue
+                    cap = term_credit_caps[i] if i > 3 else max(term_credit_caps[i], first_two_year_floor)
+                    if semesters[i]["total_credits"] + c["credits"] > cap:
+                        continue
+                    semesters[j]["courses"].pop(ei)
+                    semesters[j]["total_credits"] -= c["credits"]
+                    semesters[i]["courses"].append(c)
+                    semesters[i]["total_credits"] += c["credits"]
+                    moved_any = True
+                    break
+                if moved_any:
+                    break
+            if moved_any:
+                break
+        if not moved_any:
+            break
+
+
 @lru_cache(maxsize=1)
 def _catalog_map_abet_first() -> dict[str, dict]:
     db = LinkDatabase()
@@ -293,18 +402,41 @@ class CourseScheduler:
             semesters[idx]["courses"].append(course)
             semesters[idx]["total_credits"] += course["credits"]
 
-        # Add General Education placeholders across the plan up to 120 total credits.
+        # General Education placeholders to 120 credits: prefer years 1–2 (semesters 0–3), then spill.
         planned_core = sum(s["total_credits"] for s in semesters)
         gen_ed_needed = max(0, 120 - planned_core)
-        sem_idx = 0
-        while gen_ed_needed > 0:
-            idx = sem_idx % len(semesters)
-            sem = semesters[idx]
-            sem_idx += 1
-            if sem["total_credits"] + 3 <= term_credit_caps[idx]:
-                sem["courses"].append(_course("GEN ED", "General Education", 3, "General Education"))
-                sem["total_credits"] += 3
-                gen_ed_needed -= 3
+        first_two_floor = 18
+        rotation = 0
+        guard = 0
+        while gen_ed_needed > 0 and guard < 500:
+            guard += 1
+            placed = False
+            for step in range(4):
+                sem_idx = (rotation + step) % 4
+                cap = max(term_credit_caps[sem_idx], first_two_floor)
+                sem = semesters[sem_idx]
+                if sem["total_credits"] + 3 <= cap:
+                    sem["courses"].append(_gen_ed_placeholder())
+                    sem["total_credits"] += 3
+                    gen_ed_needed -= 3
+                    placed = True
+                    rotation = (sem_idx + 1) % 4
+                    break
+            if not placed:
+                for sem_idx in range(4, len(semesters)):
+                    cap = term_credit_caps[sem_idx]
+                    sem = semesters[sem_idx]
+                    if sem["total_credits"] + 3 <= cap:
+                        sem["courses"].append(_gen_ed_placeholder())
+                        sem["total_credits"] += 3
+                        gen_ed_needed -= 3
+                        placed = True
+                        break
+            if not placed:
+                break
+
+        _rebalance_gen_ed_avoid_singles(semesters, term_credit_caps, first_two_floor)
+        _ensure_min_two_isat_per_semester(semesters, term_credit_caps, min_index_for_course, first_two_floor)
 
         for sem in semesters:
             sem["total_credits"] = sum(c["credits"] for c in sem["courses"])

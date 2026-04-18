@@ -23,6 +23,7 @@ from langchain_openai import OpenAIEmbeddings
 from openai import OpenAI
 from database.db_write import LinkDatabase
 from planner.course_scheduler import CourseScheduler, normalize_course_code
+from planner.schedule_render import format_schedule_message
 
 # Load .env file from project root
 load_dotenv(dotenv_path=os.path.join(project_root, '.env'))
@@ -250,46 +251,6 @@ def _prioritize_course_mentions(
     return (primary + mention + rest)[:top_k]
 
 
-def _format_scheduler_output(
-    concentration: str,
-    sector: str,
-    selected_courses: list[str],
-    schedule_output: dict,
-) -> str:
-    semesters = schedule_output.get("semesters", [])
-    notes = schedule_output.get("notes", [])
-    totals = schedule_output.get("totals", {})
-
-    output = [
-        f"### Concentration: {concentration.title()}",
-        f"### Sector: {sector.title()}",
-        "",
-        '<div style="display:grid; grid-template-columns: repeat(2, minmax(340px, 1fr)); gap:16px; align-items:start;">',
-    ]
-    for sem in semesters:
-        output.append('<div>')
-        output.append(f"<h3>{sem['term']} ({sem['total_credits']} credits)</h3>")
-        output.append("<table>")
-        output.append("<thead><tr><th>Course</th><th>Title</th><th>Credits</th></tr></thead>")
-        output.append("<tbody>")
-        for c in sem["courses"]:
-            output.append(f"<tr><td>{c['code']}</td><td>{c['title']}</td><td>{c['credits']}</td></tr>")
-        output.append("</tbody></table>")
-        output.append("</div>")
-    output.append("</div>")
-    output.append("")
-
-    output.append("### Totals")
-    output.append(f"- Planned Credits: {totals.get('planned_credits', 0)} / {totals.get('degree_target', 120)}")
-    output.append("### Notes")
-    output.append(f"- Concentration courses selected: {', '.join(selected_courses) if selected_courses else 'None selected'}")
-    for note in notes:
-        output.append(f"- {note}")
-    output.append("")
-    output.append("Do you want to make any changes or edits to your schedule?")
-    return "\n".join(output)
-
-
 def _handle_schedule_intake(question: str, conversation_history: list[dict]) -> str:
     state, payload = _get_intake_state(question, conversation_history)
 
@@ -316,11 +277,13 @@ def _handle_schedule_intake(question: str, conversation_history: list[dict]) -> 
             "selected_concentration_courses": selected_courses,
         }
     )
-    return _format_scheduler_output(
+    elective_options = scheduler_tool.concentration_options(concentration)
+    return format_schedule_message(
         concentration=concentration,
         sector=sector,
         selected_courses=selected_courses,
         schedule_output=schedule_output,
+        concentration_elective_options=elective_options,
     )
 
 

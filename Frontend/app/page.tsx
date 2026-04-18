@@ -46,6 +46,14 @@ export default function Home() {
   }, [messages]);
 
   useEffect(() => {
+    const onFs = () => {
+      if (!document.fullscreenElement) setFullscreenMessageIdx(null);
+    };
+    document.addEventListener("fullscreenchange", onFs);
+    return () => document.removeEventListener("fullscreenchange", onFs);
+  }, []);
+
+  useEffect(() => {
     const lastBot = [...messages].reverse().find((m) => m.role === 'bot');
     const prompt = lastBot ? getPromptOptions(lastBot.content) : null;
     if (!prompt || prompt.kind !== 'multi') {
@@ -108,17 +116,29 @@ export default function Home() {
 
   const isScheduleMessage = (content: string): boolean => {
     const low = content.toLowerCase();
-    return low.includes("<table") && low.includes("### totals");
+    // Legacy HTML schedule from older API output
+    if (low.includes("<table") && (low.includes("### totals") || low.includes("<h3>"))) return true;
+    // Markdown four-year plan (paired Fall/Spring tables + summary)
+    const mdSchedule =
+      low.includes("#### first year") &&
+      low.includes("#### fourth year") &&
+      low.includes("fall semester courses") &&
+      low.includes("total planned credits");
+    return mdSchedule;
   };
 
   const toggleFullscreen = async (index: number) => {
     const target = scheduleMessageRefs.current[index];
     if (!target) return;
     try {
-      if (document.fullscreenElement) {
+      if (document.fullscreenElement === target) {
         await document.exitFullscreen();
         setFullscreenMessageIdx(null);
         return;
+      }
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+        setFullscreenMessageIdx(null);
       }
       await target.requestFullscreen();
       setFullscreenMessageIdx(index);
@@ -128,9 +148,10 @@ export default function Home() {
   };
 
   const downloadSchedule = (index: number) => {
-    const target = scheduleMessageRefs.current[index];
-    if (!target) return;
-    const htmlContent = target.innerHTML;
+    const wrap = scheduleMessageRefs.current[index];
+    if (!wrap) return;
+    const inner = wrap.querySelector(".schedule-message-content");
+    const htmlContent = inner ? inner.innerHTML : wrap.innerHTML;
     const html = `<!doctype html>
 <html>
   <head>
@@ -234,14 +255,55 @@ export default function Home() {
             )}
             {messages.map((msg, index) => (
               <div key={index} className={`message ${msg.role}`}>
-                <div className="message-stack">
+                <div
+                  className={`message-stack ${
+                    msg.role === 'bot' && isScheduleMessage(msg.content) ? 'schedule-message-wrap' : ''
+                  }`}
+                  ref={(el) => {
+                    if (msg.role === 'bot' && isScheduleMessage(msg.content)) {
+                      scheduleMessageRefs.current[index] = el;
+                    }
+                  }}
+                >
+                  {msg.role === 'bot' && isScheduleMessage(msg.content) && (
+                    <div className="schedule-message-toolbar" aria-label="Schedule actions">
+                      <button
+                        type="button"
+                        className="schedule-toolbar-btn"
+                        title={fullscreenMessageIdx === index ? "Exit fullscreen" : "Expand schedule"}
+                        aria-label={fullscreenMessageIdx === index ? "Exit fullscreen" : "Expand schedule"}
+                        onClick={() => toggleFullscreen(index)}
+                      >
+                        {fullscreenMessageIdx === index ? (
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                            <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
+                          </svg>
+                        ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                            <polyline points="15 3 21 3 21 9" />
+                            <polyline points="9 21 3 21 3 15" />
+                            <line x1="21" y1="3" x2="14" y2="10" />
+                            <line x1="3" y1="21" x2="10" y2="14" />
+                          </svg>
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        className="schedule-toolbar-btn"
+                        title="Download schedule as HTML"
+                        aria-label="Download schedule"
+                        onClick={() => downloadSchedule(index)}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                          <polyline points="7 10 12 15 17 10" />
+                          <line x1="12" y1="15" x2="12" y2="3" />
+                        </svg>
+                      </button>
+                    </div>
+                  )}
                   <div
                     className={`message-content ${msg.role === 'bot' && isScheduleMessage(msg.content) ? 'schedule-message-content' : ''}`}
-                    ref={(el) => {
-                      if (msg.role === 'bot' && isScheduleMessage(msg.content)) {
-                        scheduleMessageRefs.current[index] = el;
-                      }
-                    }}
                   >
                     {msg.role === 'bot' ? (
                       <ReactMarkdown
@@ -315,24 +377,6 @@ export default function Home() {
                       </div>
                     );
                   })()}
-                  {msg.role === 'bot' && isScheduleMessage(msg.content) && (
-                    <div className="schedule-actions">
-                      <button
-                        type="button"
-                        className="suggestion-chip"
-                        onClick={() => toggleFullscreen(index)}
-                      >
-                        {fullscreenMessageIdx === index ? "Minimize" : "Fullscreen"}
-                      </button>
-                      <button
-                        type="button"
-                        className="suggestion-chip"
-                        onClick={() => downloadSchedule(index)}
-                      >
-                        Download
-                      </button>
-                    </div>
-                  )}
                 </div>
               </div>
             ))}

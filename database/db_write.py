@@ -1,5 +1,6 @@
 import os
 import json
+import re
 import sys
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -9,6 +10,33 @@ from dotenv import load_dotenv
 # Load .env file from project root (two levels up from database/)
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 load_dotenv(dotenv_path=os.path.join(project_root, '.env'))
+
+
+def is_trustworthy_abet_course_title(name: str | None) -> bool:
+    """
+    True when ABET `course_name` looks like a real title, not syllabus boilerplate
+    or formatting instructions accidentally scraped into the name field.
+    """
+    if not name:
+        return False
+    s = str(name).strip()
+    if len(s) < 3:
+        return False
+    low = s.lower()
+    if "please use" in low:
+        return False
+    if "times new roman" in low:
+        return False
+    if ("following format" in low or "format for" in low) and (
+        "syllabus" in low or "syllabi" in low
+    ):
+        return False
+    if "page" in low and "maximum" in low and ("font" in low or "point" in low):
+        return False
+    if len(s) > 180:
+        return False
+    return True
+
 
 class LinkDatabase:
     def __init__(self):
@@ -360,7 +388,50 @@ class LinkDatabase:
             raise
         finally:
             cursor.close()
-    
+
+    def find_chunks_mentioning_course_code(self, course_code: str, limit: int = 8) -> List[dict]:
+        """
+        Chunks whose text references a course (e.g. prerequisites) when there is no
+        course_id row or no chunks linked to that course.
+        """
+        mm = re.search(r"(?:ISAT\s*)?(\d{3}[A-Z]?)", (course_code or "").upper())
+        if not mm:
+            return []
+        token = mm.group(1).upper()
+        like_space = f"%ISAT {token}%"
+        like_compact = f"%ISAT{token}%"
+        cursor = self.conn.cursor(cursor_factory=RealDictCursor)
+        try:
+            cursor.execute(
+                """
+                SELECT
+                    c.id AS chunk_id,
+                    c.chunk_text,
+                    c.page_id,
+                    c.course_id,
+                    c.token_count,
+                    co.course_name,
+                    co.course_code,
+                    co.course_description,
+                    co.prerequisites,
+                    co.url AS course_url,
+                    0.95 AS similarity
+                FROM chunks c
+                LEFT JOIN courses co ON c.course_id = co.id
+                WHERE (c.chunk_text ILIKE %s OR c.chunk_text ILIKE %s)
+                ORDER BY c.id
+                LIMIT %s
+                """,
+                (like_space, like_compact, limit),
+            )
+            return [dict(row) for row in cursor.fetchall()]
+        except psycopg2.Error as e:
+            print(f"Error finding chunks mentioning course code: {e}", file=sys.stderr)
+            self.conn.rollback()
+            raise
+        finally:
+            cursor.close()
+
     def find_similar_chunks(self, query_embedding: List[float], top_k: int = 8) -> List[dict]:
         """
         Find the most similar chunks to a query embedding using cosine similarity.
@@ -470,6 +541,104 @@ class LinkDatabase:
             raise
         finally:
             cursor.close()
+
+    def fetch_all_abet_syllabi(self) -> List[dict]:
+        """
+        Fetch ABET syllabi rows with usable course codes.
+        """
+        cursor = self.conn.cursor(cursor_factory=RealDictCursor)
+        try:
+            cursor.execute(
+                """
+                SELECT
+                    id,
+                    source_pdf_path,
+                    course_code,
+                    course_name,
+                    professor_name,
+                    course_description,
+                    prerequisites,
+                    course_outcomes,
+                    topics,
+                    updated_at
+                FROM abet_syllabi
+                WHERE course_code IS NOT NULL
+                ORDER BY updated_at DESC, id DESC
+                """
+            )
+            return [dict(row) for row in cursor.fetchall()]
+        except psycopg2.Error as e:
+            print(f"Error fetching ABET syllabi: {e}", file=sys.stderr)
+            self.conn.rollback()
+            raise
+        finally:
+            cursor.close()
+
+    def fetch_course_catalog_abet_first(self) -> List[dict]:
+        """
+        Return course catalog rows keyed by course_code with ABET precedence.
+        If a course exists in abet_syllabi, ABET fields override courses table fields.
+        """
+        courses = self.fetch_all_courses()
+        abet_rows = self.fetch_all_abet_syllabi()
+
+        def _norm(code: str | None) -> str:
+            raw = (code or "").upper().strip()
+            if not raw:
+                return ""
+            compact = "".join(ch for ch in raw if ch.isalnum())
+            if compact.startswith("ISAT") and len(compact) >= 7:
+                return f"ISAT {compact[4:]}"
+            if compact[:3].isdigit():
+                return f"ISAT {compact}"
+            return raw
+
+        merged: dict[str, dict] = {}
+
+        for row in courses:
+            code = _norm(row.get("course_code"))
+            if not code:
+                continue
+            merged[code] = {
+                "course_code": code,
+                "course_name": row.get("course_name"),
+                "course_description": row.get("course_description"),
+                "prerequisites": row.get("prerequisites"),
+                "source": "courses",
+            }
+
+        # ABET is source of truth when fields are trustworthy; fall back to catalog for bad extractions.
+        for row in abet_rows:
+            code = _norm(row.get("course_code"))
+            if not code:
+                continue
+            base = merged.get(
+                code,
+                {
+                    "course_code": code,
+                    "course_name": None,
+                    "course_description": None,
+                    "prerequisites": None,
+                    "source": "courses",
+                },
+            )
+            abet_name = row.get("course_name")
+            base_name = base.get("course_name")
+            if abet_name and is_trustworthy_abet_course_title(str(abet_name).strip()):
+                merged_name = str(abet_name).strip()
+            elif base_name:
+                merged_name = base_name
+            else:
+                merged_name = str(abet_name).strip() if abet_name else None
+            merged[code] = {
+                "course_code": code,
+                "course_name": merged_name,
+                "course_description": row.get("course_description") or base.get("course_description"),
+                "prerequisites": row.get("prerequisites") or base.get("prerequisites"),
+                "source": "abet_syllabi",
+            }
+
+        return [merged[k] for k in sorted(merged.keys())]
     
     def close(self):
         if self.conn:

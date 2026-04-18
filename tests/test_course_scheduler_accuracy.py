@@ -95,9 +95,9 @@ class TestCourseSchedulerAccuracy(unittest.TestCase):
                 self.assertEqual(output["totals"]["planned_credits"], 120)
                 self.assertEqual(output["totals"]["degree_target"], 120)
                 self.assertGreaterEqual(output["semesters"][0]["total_credits"], 12)
-                self.assertLessEqual(output["semesters"][0]["total_credits"], 15)
+                self.assertLessEqual(output["semesters"][0]["total_credits"], 18)
                 self.assertGreaterEqual(output["semesters"][1]["total_credits"], 12)
-                self.assertLessEqual(output["semesters"][1]["total_credits"], 15)
+                self.assertLessEqual(output["semesters"][1]["total_credits"], 18)
 
                 # 2) Course validity from requirements/program docs
                 generated_codes = _flatten_schedule_codes(output)
