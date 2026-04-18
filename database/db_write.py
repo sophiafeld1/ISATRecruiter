@@ -349,7 +349,31 @@ class LinkDatabase:
             raise
         finally:
             cursor.close()
-    
+
+    def delete_chunks_for_pages_url_like(self, pattern: str) -> int:
+        """
+        Remove chunks tied to pages whose url matches SQL LIKE pattern (e.g. after re-importing markdown).
+        Returns number of rows deleted.
+        """
+        cursor = self.conn.cursor()
+        try:
+            cursor.execute(
+                """
+                DELETE FROM chunks
+                WHERE page_id IN (SELECT id FROM pages WHERE url LIKE %s)
+                """,
+                (pattern,),
+            )
+            n = cursor.rowcount or 0
+            self.conn.commit()
+            return n
+        except psycopg2.Error as e:
+            print(f"Error deleting chunks: {e}", file=sys.stderr)
+            self.conn.rollback()
+            raise
+        finally:
+            cursor.close()
+
     def find_chunks_for_course_code(self, course_code: str, limit: int = 8) -> List[dict]:
         """
         Chunks for a course row (e.g. ISAT 449). Vector search alone often misses a specific course.
@@ -644,7 +668,19 @@ class LinkDatabase:
         if self.conn:
             self.conn.close()
 
-__main__ = __name__ == "__main__"
-if __main__:
+if __name__ == "__main__":
+    # Smoke test only — this file defines LinkDatabase; it does not load content.
+    print("Connecting to Postgres (smoke test)...", file=sys.stderr, flush=True)
     db = LinkDatabase()
+    print("OK: connected and schema ensured.", file=sys.stderr, flush=True)
+    print(
+        "Tip: import site markdown with:  python scrape/import_isat_website_data.py",
+        file=sys.stderr,
+        flush=True,
+    )
+    print(
+        "     browse tables with:        python database/view_db.py",
+        file=sys.stderr,
+        flush=True,
+    )
     db.close()

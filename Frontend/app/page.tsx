@@ -6,6 +6,7 @@ import { ModeToggle } from '@/components/mode-toggle';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
+import { buildScheduleExportHtml } from '@/lib/buildScheduleExportHtml';
 
 interface Message {
   role: 'user' | 'bot';
@@ -152,21 +153,7 @@ export default function Home() {
     if (!wrap) return;
     const inner = wrap.querySelector(".schedule-message-content");
     const htmlContent = inner ? inner.innerHTML : wrap.innerHTML;
-    const html = `<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <title>ISAT Schedule</title>
-    <style>
-      body { font-family: Georgia, serif; margin: 24px; color: #222; }
-      table { width: 100%; border-collapse: collapse; margin: 10px 0 18px; font-size: 14px; }
-      th, td { border: 1px solid #ccc; padding: 6px 8px; text-align: left; vertical-align: top; }
-      th { background: #f2edf6; }
-      h3 { margin: 16px 0 8px; }
-    </style>
-  </head>
-  <body>${htmlContent}</body>
-</html>`;
+    const html = buildScheduleExportHtml(htmlContent);
     const blob = new Blob([html], { type: "text/html;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");

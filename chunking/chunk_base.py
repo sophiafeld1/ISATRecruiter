@@ -15,6 +15,7 @@ from database.db_write import LinkDatabase
 from psycopg2.extras import RealDictCursor
 import signal
 from contextlib import contextmanager
+from typing import Any
 
 
 @contextmanager
@@ -32,6 +33,130 @@ def timeout(seconds):
     finally:
         signal.alarm(0)
         signal.signal(signal.SIGALRM, old_handler)
+
+
+def _abet_row_to_page_text(row: dict[str, Any]) -> str:
+    """Flatten an abet_syllabi row into RAG-friendly plain text."""
+    parts: list[str] = []
+    if row.get("course_code"):
+        parts.append(f"Course code: {row['course_code']}")
+    if row.get("course_name"):
+        parts.append(f"Course name: {row['course_name']}")
+    if row.get("professor_name"):
+        parts.append(f"Instructor: {row['professor_name']}")
+    if row.get("course_description"):
+        parts.append(f"Description:\n{row['course_description']}")
+    if row.get("prerequisites"):
+        parts.append(f"Prerequisites:\n{row['prerequisites']}")
+    if row.get("course_outcomes"):
+        parts.append(f"Course outcomes:\n{row['course_outcomes']}")
+    if row.get("topics"):
+        parts.append(f"Topics:\n{row['topics']}")
+    if row.get("source_pdf_path"):
+        parts.append(f"ABET syllabus source: {row['source_pdf_path']}")
+    return "\n\n".join(parts).strip()
+
+
+def sync_abet_syllabi_to_pages(db: LinkDatabase) -> int:
+    """
+    Upsert one synthetic pages row per abet_syllabi row (url local://abet_syllabi/{id})
+    so ABET text can reuse the same chunking pipeline as other pages.
+    """
+    cursor = db.conn.cursor(cursor_factory=RealDictCursor)
+    cursor.execute(
+        """
+        SELECT id, source_pdf_path, course_code, course_name, professor_name,
+               course_description, prerequisites, course_outcomes, topics
+        FROM abet_syllabi
+        ORDER BY id
+        """
+    )
+    rows = cursor.fetchall()
+    cursor.close()
+    n = 0
+    for row in rows:
+        text = _abet_row_to_page_text(dict(row))
+        if not text:
+            continue
+        db.upsert_page(url=f"local://abet_syllabi/{row['id']}", text=text, links=None)
+        n += 1
+    return n
+
+
+def chunk_abet_syllabi():
+    """
+    Sync abet_syllabi → pages, drop old chunks for those URLs, then semantic-chunk ABET pages only.
+    """
+    db = LinkDatabase()
+    print("Syncing abet_syllabi → pages (local://abet_syllabi/{id})...\n")
+    synced = sync_abet_syllabi_to_pages(db)
+    if synced == 0:
+        print("No rows in abet_syllabi (or all empty). Populate abet_syllabi first, then retry.\n")
+        db.close()
+        return
+
+    print(f"Upserted {synced} ABET-backed page(s).\n")
+    deleted = db.delete_chunks_for_pages_url_like("local://abet_syllabi/%")
+    print(f"Removed {deleted} prior chunk(s) for ABET pages.\n")
+
+    cursor = db.conn.cursor(cursor_factory=RealDictCursor)
+    cursor.execute(
+        """
+        SELECT id, url, text FROM pages
+        WHERE text IS NOT NULL AND url LIKE 'local://abet_syllabi/%'
+        ORDER BY id
+        """
+    )
+    pages = cursor.fetchall()
+
+    embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+    chunker = SemanticChunker(embeddings)
+    total_chunks = 0
+
+    for page in pages:
+        page_id = page["id"]
+        url = page["url"]
+        text = page["text"]
+
+        if not text or len(text.strip()) == 0:
+            continue
+
+        print(f"Chunking ABET page {page_id}: {url[:70]}...")
+
+        try:
+            if len(text) > 50000:
+                print(f"  ⚠ Skipping — too large ({len(text)} chars)\n")
+                continue
+            try:
+                with timeout(120):
+                    chunks = chunker.create_documents([text])
+            except TimeoutError:
+                print(f"  ⚠ Timeout, skipping...\n")
+                continue
+
+            print(f"  → Created {len(chunks)} chunks")
+
+            for chunk in chunks:
+                chunk_text = chunk.page_content
+                token_count = len(chunk_text) // 4
+                db.insert_chunk(
+                    page_id=page_id,
+                    chunk_text=chunk_text,
+                    embedding=None,
+                    token_count=token_count,
+                )
+                total_chunks += 1
+
+            print(f"  ✓ Stored {len(chunks)} chunks\n")
+
+        except Exception as e:
+            print(f"  ✗ Error: {e}\n")
+            continue
+
+    cursor.close()
+    db.close()
+    print(f"Complete! Created {total_chunks} chunk(s) from {len(pages)} ABET page(s).")
+    print("Next: python chunking/embeddings.py  (embed new chunks)\n")
 
 
 def chunk_pages():
@@ -231,14 +356,17 @@ if __name__ == "__main__":
             chunk_courses()
         elif sys.argv[1] == "pages":
             chunk_pages()
+        elif sys.argv[1] in ("abet", "abet_syllabi", "syllabi"):
+            chunk_abet_syllabi()
         elif sys.argv[1] in ["-h", "--help", "help"]:
             print("Usage:")
-            print("  python chunking/chunk_base.py          # Interactive menu")
-            print("  python chunking/chunk_base.py pages    # Chunk pages")
-            print("  python chunking/chunk_base.py courses  # Chunk courses")
+            print("  python chunking/chunk_base.py            # Interactive menu")
+            print("  python chunking/chunk_base.py pages      # Chunk pages table")
+            print("  python chunking/chunk_base.py courses    # Chunk courses table")
+            print("  python chunking/chunk_base.py abet       # Sync abet_syllabi → pages, then chunk those")
         else:
             print(f"Unknown argument: {sys.argv[1]}")
-            print("Use 'pages' or 'courses' as argument, or run without arguments for interactive menu.")
+            print("Use 'pages', 'courses', or 'abet', or run without arguments for interactive menu.")
     else:
         # Interactive menu
         print("\n" + "=" * 60)
@@ -247,10 +375,11 @@ if __name__ == "__main__":
         print("\nWhat would you like to chunk?")
         print("1. pages")
         print("2. courses")
-        print("3. both")
+        print("3. both (pages + courses)")
+        print("4. ABET syllabi (abet_syllabi → pages, then chunk)")
         print("0. exit")
         
-        choice = input("\nEnter your choice (0-3): ").strip()
+        choice = input("\nEnter your choice (0-4): ").strip()
         
         if choice == "1":
             chunk_pages()
@@ -261,8 +390,10 @@ if __name__ == "__main__":
             chunk_pages()
             print("\nChunking courses...")
             chunk_courses()
+        elif choice == "4":
+            chunk_abet_syllabi()
         elif choice == "0":
             print("Exiting...")
         else:
-            print("Invalid choice. Please run again and select 0-3.")
+            print("Invalid choice. Please run again and select 0-4.")
 
