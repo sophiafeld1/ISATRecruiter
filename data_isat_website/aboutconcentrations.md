@@ -12,7 +12,7 @@ We provide a comprehensive and hands-on approach to learning. You'll gain practi
 Join us on a transformative journey into the world of biotechnology and unlock its immense potential to tackle pressing global challenges.
 
 
-# Applied Computing Concentration Careers 
+# Applied Computing Concentration 
 
 If you have a passion for problem-solving and a love for all things digital, the Applied Computing concentration might be the perfect fit for you.
 

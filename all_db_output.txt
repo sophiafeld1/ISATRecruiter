@@ -1,0 +1,970 @@
+================================================================================
+Course ID: 1
+Course Name: Environmental Issues in Science and Technology (2,3) [C3PP]
+Course Code: ISAT 112. Environmental Issues in Science and Technology (2,3) [C3PP]
+Prerequisites: None
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369747
+Description length: 466 characters
+Description preview: ISAT 112. Environmental Issues in Science and Technology (2,3) [C3PP] Credits 4.00 PeopleSoft Course ID 002194 Grading Basis GRD This course integrates the study of environmental chemistry, ecology and sustainability science to achieve a conceptual and quantitative understanding of environmental issues including air pollution, climate change, ozone depletion, acid deposition, plastics, waste and biodiversity. This course may be used for general education credit....
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 2
+Course Name: Biotechnology Issues in Science and Technology [C3NS]
+Course Code: ISAT 113. Biotechnology Issues in Science and Technology [C3NS]
+Prerequisites: None
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369733
+Description length: 579 characters
+Description preview: ISAT 113. Biotechnology Issues in Science and Technology [C3NS] Credits 3.00 PeopleSoft Course ID 000203 Grading Basis GRD This course is an applied introduction to biological systems, as an entry point for the understanding and analysis of biotechnological solutions. Topics include the way in which features of biochemical structure and function, information flow within cells, genetic inheritance, metabolism, and immune responses can be used to solve problems related to disease, food and the env...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 3
+Course Name: Biotechnology Issues in Science and Technology Laboratory [C3L]
+Course Code: ISAT 113L. Biotechnology Issues in Science and Technology Laboratory [C3L]
+Prerequisites: ISAT 113
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=372334
+Description length: 577 characters
+Description preview: ISAT 113L. Biotechnology Issues in Science and Technology Laboratory [C3L] Credits 1.00 PeopleSoft Course ID 014490 Grading Basis GRD Students will build practical and scientific literacy skills in the context of a life science wet lab. Descriptive and inquiry-based activities will include elements of study design, protocol implementation, and data collection and analysis. Recordkeeping and analytical skills will develop through in-lab documentation and comprehensive reports. May be used for gen...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 4
+Course Name: Issues in Modern Production Systems
+Course Code: ISAT 211. Issues in Modern Production Systems
+Prerequisites: None
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369774
+Description length: 797 characters
+Description preview: ISAT 211. Issues in Modern Production Systems Credits 3.00 PeopleSoft Course ID 008480 Grading Basis GRD This course explores the principles of making, designing, integrating and improving production systems by asking the following questions: What is the right way to transform materials and who (or what) determines that? How do political, environmental, social, technological, legal/regulatory, ethical and economic factors impact the way individuals and organizations make, design, integrate and i...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 5
+Course Name: Energy Issues in Science and Technology
+Course Code: ISAT 212. Energy Issues in Science and Technology
+Prerequisites: ISAT 152 or Permission of the Instructor
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369761
+Description length: 559 characters
+Description preview: ISAT 212. Energy Issues in Science and Technology Credits 3.00 PeopleSoft Course ID 005767 Grading Basis GRD Introduction to scientific and economic concepts relevant to energy. Concepts are taught within the context of three or four themes, e.g. residential energy efficiency, renewable energy sources, “make-or-buy” fossil energy application and space power systems. Themes may change from year to year reflecting contemporary issues and opportunities to link with industry and government agencies....
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 6
+Course Name: Topics in Applied Calculus in ISAT [C3QR]
+Course Code: ISAT 151. Topics in Applied Calculus in ISAT [C3QR]
+Prerequisites: None
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369796
+Description length: 498 characters
+Description preview: ISAT 151. Topics in Applied Calculus in ISAT [C3QR] Credits 4.00 PeopleSoft Course ID 011502 Grading Basis GRD This course introduces the concepts of differential and integral calculus and ordinary differential equations to model real-world applications in science, business, technology and economics. This course includes a computer laboratory component emphasizing modeling and numerical methods. Course assumes familiarity with algebra and trigonometry. May be used for general education credit....
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 7
+Course Name: Topics in Applied Physics in ISAT
+Course Code: ISAT 152. Topics in Applied Physics in ISAT
+Prerequisites: ISAT 151 or permission of the instructor
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369802
+Description length: 532 characters
+Description preview: ISAT 152. Topics in Applied Physics in ISAT Credits 4.00 PeopleSoft Course ID 011519 Grading Basis GRD This course introduces topics in general physics including one- and two-dimensional motion, mechanics, energy, waves, electricity, magnetism, optics, lasers, and early quantum theory. Vectors, algebra, and differential and integral calculus, are used to model physical system behavior. Laboratory experiments and computer exercises enhance understanding of the concepts. Prerequisite(s): ISAT 151 ...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 8
+Course Name: Topics in Applied Statistics in ISAT [C3QR]
+Course Code: ISAT 251. Topics in Applied Statistics in ISAT [C3QR]
+Prerequisites: Sophomore standing or permission of the instructor
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369801
+Description length: 689 characters
+Description preview: ISAT 251. Topics in Applied Statistics in ISAT [C3QR] Credits 3.00 PeopleSoft Course ID 011508 Grading Basis GRD This course introduces statistical thinking – the discipline and methods for collecting, analyzing, and interpreting data for making decisions, doing science, and understanding our world. Topics covered include an introduction to data analysis methods, probability and chance, statistical reasoning and inference, and experimental design. The course includes a laboratory component empha...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 9
+Course Name: Programming and Problem Solving
+Course Code: ISAT 252. Programming and Problem Solving
+Prerequisites: Sophomore standing or permission of the instructor
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369770
+Description length: 585 characters
+Description preview: ISAT 252. Programming and Problem Solving Credits 3.00 PeopleSoft Course ID 007599 Grading Basis GRD This course is an introduction to computational thinking and formal logic. Students create software to solve problems in applied science, business and engineering taking social context into account. Programming paradigms include procedural, object-oriented and event-driven. Emphasis is placed on effective analysis, planning, documentation, communication and teamwork in professional software devel...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 10
+Course Name: Applied Computing, Instrumentation and Measurement
+Course Code: ISAT 300. Applied Computing, Instrumentation and Measurement
+Prerequisites: ISAT 252 and a minimum grade of “C-” in either ISAT 251 or MATH 220
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=372347
+Description length: 943 characters
+Description preview: ISAT 300. Applied Computing, Instrumentation and Measurement Credits 3.00 PeopleSoft Course ID 014426 Grading Basis GRD This course covers the fundamental nature of measurement in the practice of science and technology. It examines how computing technology is applied to the collection, storage, processing and presentation of data. In addition to discussions about how and why measurements are taken, the uncertainty involved in all measurements and the statistical methods used for analysis will be...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 11
+Course Name: Governance of Sociotechnical Systems
+Course Code: ISAT 171. Governance of Sociotechnical Systems
+Prerequisites: None
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=372025
+Description length: 391 characters
+Description preview: ISAT 171. Governance of Sociotechnical Systems Credits 3.00 PeopleSoft Course ID 005860 Grading Basis GRD Solutions to human problems are mediated by economic and political institutions, which in turn help to shape technology and science. The course covers basic political and economic concepts, institutions and processes as they relate to American and international science and technology....
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 12
+Course Name: Technology, Science and Society
+Course Code: ISAT 271. Technology, Science and Society
+Prerequisites: ISAT 171
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=372027
+Description length: 433 characters
+Description preview: ISAT 271. Technology, Science and Society Credits 3.00 PeopleSoft Course ID 000970 Grading Basis GRD This course introduces the social aspects of technology and science. It covers social science methods and related philosophical and ethical analyses. Students learn how the practice of science relates to the human-built world and why critical evaluations of science and technology policies are important. Prerequisite(s): ISAT 171 ....
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 13
+Course Name: Introduction to Holistic Problem Solving in the ISAT Major
+Course Code: ISAT 190. Introduction to Holistic Problem Solving in the ISAT Major
+Prerequisites: None
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=372026
+Description length: 356 characters
+Description preview: ISAT 190. Introduction to Holistic Problem Solving in the ISAT Major Credits 1.00 PeopleSoft Course ID 013754 Grading Basis GRD This course introduces holistic problem solving through the lens of the ISAT major. Skills such as effective teaming, information literacy, systems thinking, stakeholder identification and complex problem analysis are developed....
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 14
+Course Name: Introduction to Systems Thinking for Complex Problems
+Course Code: ISAT 290. Introduction to Systems Thinking for Complex Problems
+Prerequisites: ISAT 190 or permission of the instructor and ISAT 212 with a grade of “C-” or better
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369824
+Description length: 680 characters
+Description preview: ISAT 290. Introduction to Systems Thinking for Complex Problems Credits 3.00 PeopleSoft Course ID 013753 Grading Basis GRD Students will develop skills to apply systems thinking methodology to investigate, define and describe complex problems. They will build a recognition and appreciation of common causal structures that influence the evolution of a problem over time. Structures include interactions between cultural, institutional, natural and technological factors. Collaboration, integration o...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 15
+Course Name: Holistic Problem-Solving Workshop I
+Course Code: ISAT 390. Holistic Problem-Solving Workshop I
+Prerequisites: ISAT 290 and ISAT 271
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369825
+Description length: 630 characters
+Description preview: ISAT 390. Holistic Problem-Solving Workshop I Credits 3.00 PeopleSoft Course ID 013759 Grading Basis GRD In this course, students will practice holistic problem-solving approaches to analyze and propose solutions for complex problems that involve a mix of scientific, technological and societal elements. The course will use a variety of case studies that represent real-world problems that significantly impact society. For each case study, students will explore the system dynamics from which the p...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 16
+Course Name: Holistic Problem-Solving Workshop II
+Course Code: ISAT 391. Holistic Problem-Solving Workshop II
+Prerequisites: ISAT 390
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369827
+Description length: 566 characters
+Description preview: ISAT 391. Holistic Problem-Solving Workshop II Credits 3.00 PeopleSoft Course ID 013793 Grading Basis GRD This course continues the practice of holistic problem-solving initiated in ISAT 390 . In this follow-up course, students will operate in a self-guided manner to analyze and propose solutions for complex problems that involve a mix of scientific, technological, and societal elements. Students will explore the system dynamics from which the problem emerges and evaluate both short- and long-te...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 17
+Course Name: Instrumentation and Measurement in Biotechnology (0, 2)
+Course Code: ISAT 305. Instrumentation and Measurement in Biotechnology (0, 2)
+Prerequisites: ISAT 113 and ISAT 113L ; or BIO 240 ; or permission of the instructor
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369772
+Description length: 560 characters
+Description preview: ISAT 305. Instrumentation and Measurement in Biotechnology (0, 2) Credits 1.00 PeopleSoft Course ID 007920 Grading Basis GRD This course provides a hands-on experience of the techniques and instrumentation used in the modern biotechnology laboratory. Topics include aseptic techniques for establishing microbial cultures, detection and analysis of recombinant DNA molecules, protein purification, SDS gel electrophoresis and the use of PCR technology for genetic analysis. Prerequisite(s): ISAT 113 a...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 18
+Course Name: Biotechnology for the New Millennium I
+Course Code: ISAT 350. Biotechnology for the New Millennium I
+Prerequisites: ISAT 113 /I ISAT 113L or equivalent
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369786
+Description length: 399 characters
+Description preview: ISAT 350. Biotechnology for the New Millennium I Credits 3.00 PeopleSoft Course ID 009892 Grading Basis GRD This course covers the scientific foundations and historical development of biotechnology. Specific topics include living system nanotechnology; cell structure and function; origins of genetic engineering; and recombinant DNA technology. Prerequisite(s): ISAT 113 /I ISAT 113L or equivalent....
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 19
+Course Name: Biotechnology for the New Millennium II
+Course Code: ISAT 351. Biotechnology for the New Millennium II
+Prerequisites: ISAT 113 , or BIO 240 / BIO 240L and BIOT 260 or permission of the instructor
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369739
+Description length: 534 characters
+Description preview: ISAT 351. Biotechnology for the New Millennium II Credits 3.00 PeopleSoft Course ID 000514 Grading Basis GRD This course is a continuation of ISAT 350 and describes applications of biotechnology in agriculture, industry and medical science as well as associated social, ethical and philosophical issues. Topics include study of an emerging infectious disease, energy transduction in living systems and novel applications of biotechnology. Prerequisite(s): ISAT 113 , or BIO 240 / BIO 240L and BIOT 26...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 20
+Course Name: Database Design, Implementation and Management
+Course Code: ISAT 340. Database Design, Implementation and Management
+Prerequisites: ISAT 252 or permission of the instructor
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369736
+Description length: 583 characters
+Description preview: ISAT 340. Database Design, Implementation and Management Credits 3.00 PeopleSoft Course ID 000308 Grading Basis GRD This course provides an introduction to database technology as a component of information systems. The course will introduce students to the design and management of databases through relational database management systems, including the use of Structured Query Language (SQL), forms and reports. Current developments in the role and deployment of a database as part of the applicatio...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 21
+Course Name: Machine Learning and Data Science
+Course Code: ISAT 341. Machine Learning and Data Science
+Prerequisites: Junior standing and ISAT 340 or CS 149
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369789
+Description length: 457 characters
+Description preview: ISAT 341. Machine Learning and Data Science Credits 3.00 PeopleSoft Course ID 010324 Grading Basis GRD Explores the data science and machine learning landscapes by developing and implementing programs capable of learning from data extracted from several knowledge domains. Students will use production ready tools that facilitate model development and deployment to a variety of computing platforms. Prerequisite(s): Junior standing and ISAT 340 or CS 149 ....
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 22
+Course Name: Instrumentation and Measurement in Energy (0, 2)
+Course Code: ISAT 301. Instrumentation and Measurement in Energy (0, 2)
+Prerequisites: ISAT 212 and ISAT 253 or permission of the instructor
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369782
+Description length: 502 characters
+Description preview: ISAT 301. Instrumentation and Measurement in Energy (0, 2) Credits 1.00 PeopleSoft Course ID 009684 Grading Basis GRD Instrumentation is used to acquire data from representative systems that include mechanical, thermal, solar, chemical and nuclear energy. Students analyze the data to enhance understanding of these forms of energy. Energy transport processes are also characterized. Computer-based data acquisition is emphasized. Prerequisite(s): ISAT 212 and ISAT 253 or permission of the instructo...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 23
+Course Name: Energy Fundamentals I
+Course Code: ISAT 310. Energy Fundamentals I
+Prerequisites: ISAT 212 is the
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369779
+Description length: 449 characters
+Description preview: ISAT 310. Energy Fundamentals I Credits 3.00 PeopleSoft Course ID 008896 Grading Basis GRD This course covers the integration of fundamental concepts from physics, chemistry, mathematics and engineering within the context of energy applications. Principles governing energy transformations, transport and conversion, including laws of thermodynamics, chemical and nuclear reactions and thermal science. Prerequisite(s): ISAT 212 is the prerequisite....
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 24
+Course Name: Role of Energy in Modern Society
+Course Code: ISAT 311. Role of Energy in Modern Society
+Prerequisites: ISAT 212 or consent of instructor
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369777
+Description length: 545 characters
+Description preview: ISAT 311. Role of Energy in Modern Society Credits 3.00 PeopleSoft Course ID 008752 Grading Basis GRD This course covers the role of energy in the U.S. and world economies. Geology of energy-valued natural resources: size, quality and economics of domestic and world resource base. Models for energy use by different sectors. The role of energy in global climate change; other energy-related environmental concerns; and the implications for national and international security will be studied. Prereq...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 25
+Course Name: Fundamentals of Environmental Science and Technology I
+Course Code: ISAT 320. Fundamentals of Environmental Science and Technology I
+Prerequisites: ISAT 112 or permission of the instructor
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369790
+Description length: 559 characters
+Description preview: ISAT 320. Fundamentals of Environmental Science and Technology I Credits 4.00 PeopleSoft Course ID 010377 Grading Basis GRD This course provides the student with a basic understanding of environmental processes, pollution and control technologies. Grounded in ecology and systems thinking, ISAT 320 integrates classroom learning, field-based studies and laboratory analysis of field samples to explore local aquatic and terrestrial environments and contextualize them in broader scientific knowledge....
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 26
+Course Name: Fundamentals of Environmental Science and Technology II
+Course Code: ISAT 321. Fundamentals of Environmental Science and Technology II
+Prerequisites: ISAT 320
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369759
+Description length: 548 characters
+Description preview: ISAT 321. Fundamentals of Environmental Science and Technology II Credits 3.00 PeopleSoft Course ID 005616 Grading Basis GRD This course builds on the student’s basic understanding of environmental pollution, processes and control technologies in the context of systems thinking and sustainable practices. Content includes solid and hazardous waste and its management, the principles of environmental risk assessment, air quality analysis and management, drinking water and wastewater treatment, and ...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 27
+Course Name: Production Systems Automation Lab
+Course Code: ISAT 303. Production Systems Automation Lab
+Prerequisites: None
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=371868
+Description length: 502 characters
+Description preview: ISAT 303. Production Systems Automation Lab Credits 1.00 PeopleSoft Course ID 004004 Grading Basis GRD The role, function and implementation of sensors, actuators and controls in open and closed loop control systems are explored and implemented in constant process flexible manufacturing systems. Programmable logic controllers (PLCs) are emphasized. The synthesis of automation technologies is realized by exploring physical mechatronic systems via hands-on lab experiences using real world equipmen...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 28
+Course Name: Sustainable Manufacturing Systems
+Course Code: ISAT 330. Sustainable Manufacturing Systems
+Prerequisites: ISAT 211 and ISAT 251 or permission of the instructor
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369776
+Description length: 449 characters
+Description preview: ISAT 330. Sustainable Manufacturing Systems Credits 3.00 PeopleSoft Course ID 008613 Grading Basis GRD Introduces and applies principles of production planning and control with an emphasis on sustainable production and environmentally conscious manufacturing. Topics include scheduling, inventory control, facility layout, capacity planning, forecasting and lean manufacturing. Prerequisite(s): ISAT 211 and ISAT 251 or permission of the instructor....
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 29
+Course Name: Cyber-Physical Industry
+Course Code: ISAT 331. Cyber-Physical Industry
+Prerequisites: ISAT 211
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369771
+Description length: 745 characters
+Description preview: ISAT 331. Cyber-Physical Industry Credits 3.00 PeopleSoft Course ID 007749 Grading Basis GRD This course provides an in-depth treatment and understanding of manufacturing automation and control technologies, material transportation and identification, cyber physical systems, and human factors and ergonomics in manufacturing. Topics include industrial control systems, hardware components for automation and process control, computer numerical control, industrial robotics, programmable logic contro...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 30
+Course Name: Capstone Experience I
+Course Code: ISAT 490. Capstone Experience I
+Prerequisites: None
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369764
+Description length: 543 characters
+Description preview: ISAT 490. Capstone Experience I Credits 1.00 PeopleSoft Course ID 006296 Grading Basis GRD This is the first of a four-course sequence. Students perform an independent research project, either alone or within an investigative team, to identify and analyze a science- or technology-based problem (broadly defined), culminating in a public presentation at the ISAT Senior Symposium. In this course, students will identify an appropriate problem to investigate for their Capstone experience and assemble...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 31
+Course Name: Senior Capstone Project I
+Course Code: ISAT 491. Senior Capstone Project I
+Prerequisites: None
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369781
+Description length: 415 characters
+Description preview: ISAT 491. Senior Capstone Project I Credits 1.00 PeopleSoft Course ID 009222 Grading Basis GRD First course in a three-course sequence. Student generates an idea for and writes a proposal for an independent or team-based research project. Student must identify and analyze a science- or technology-based problem (broadly defined), identify potential solutions, recommend an approach, and prepare a written proposal....
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 32
+Course Name: Senior Capstone Project II
+Course Code: ISAT 492. Senior Capstone Project II
+Prerequisites: None
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369744
+Description length: 313 characters
+Description preview: ISAT 492. Senior Capstone Project II Credits 2.00 PeopleSoft Course ID 000868 Grading Basis GRD Second course in a three-course sequence. Student performs the bulk of the research needed for an independent research project, either alone or within an investigative team, to address a technologically based problem....
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 33
+Course Name: Senior Capstone Project III
+Course Code: ISAT 493. Senior Capstone Project III
+Prerequisites: None
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369755
+Description length: 350 characters
+Description preview: ISAT 493. Senior Capstone Project III Credits 2.00 PeopleSoft Course ID 004567 Grading Basis GRD Third course in a three-course sequence. Student finishes the research and prepares an oral and a written report on the work (either alone or within an investigative team), addressing a technologically based problem and developing alternative solutions....
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 34
+Course Name: Biotechnology in Industry and Agriculture
+Course Code: ISAT 451. Biotechnology in Industry and Agriculture
+Prerequisites: ISAT 330 or ISAT 350 or BIO 240 and BIOT 260 or permission of the instructor
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369757
+Description length: 507 characters
+Description preview: ISAT 451. Biotechnology in Industry and Agriculture Credits 3.00 PeopleSoft Course ID 005203 Grading Basis GRD This course illustrates the applications of biotechnology in agriculture and industry, linking scientific discoveries to business and manufacturing practices. Topics include pharmaceutical product development, genetic engineering in agriculture, biotechnology in food processing and regulatory issues. Prerequisite(s): ISAT 330 or ISAT 350 or BIO 240 and BIOT 260 or permission of the inst...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 35
+Course Name: Medical Biotechnology
+Course Code: ISAT 452. Medical Biotechnology
+Prerequisites: ISAT 351 or BIO 240 or permission of the instructor
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369773
+Description length: 530 characters
+Description preview: ISAT 452. Medical Biotechnology Credits 3.00 PeopleSoft Course ID 008069 Grading Basis GRD This course will explore the way in which modern biotechnology can be used as a tool to define and solve problems related to human health. Insights will come through the review and critical analysis of molecular evidence, modeling of the human body and the drug discovery pipeline as complex systems, and an identification and appreciation for stakeholder perspectives. Prerequisite(s): ISAT 351 or BIO 240 or...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 36
+Course Name: Computer Applications in Biotechnology
+Course Code: ISAT 454. Computer Applications in Biotechnology
+Prerequisites: ISAT 351 or BIO 240 and BIOT 260 or permission of the instructor
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369751
+Description length: 475 characters
+Description preview: ISAT 454. Computer Applications in Biotechnology Credits 3.00 PeopleSoft Course ID 003434 Grading Basis GRD Students learn how complex biological molecules support and regulate processes in living systems, through building interactive computer models of protein and nucleic acid structure and function. The course requirements include written and oral presentations and creation of Web pages. Prerequisite(s): ISAT 351 or BIO 240 and BIOT 260 or permission of the instructor....
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 37
+Course Name: Regulatory Issues Biotechnology
+Course Code: ISAT 455. Regulatory Issues Biotechnology
+Prerequisites: ISAT 350 or BIO 240 and BIOT 260 or permission of the instructor
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369785
+Description length: 539 characters
+Description preview: ISAT 455. Regulatory Issues Biotechnology Credits 3.00 PeopleSoft Course ID 009889 Grading Basis GRD This course examines the policies and guidelines of federal government agencies that regulate the use of recombinant DNA technology, genetically engineered organisms and the manufacturing of biotechnology products. Issues of product safety, product labeling, physical and biological containment, environmental release, and mammalian cloning are presented. Prerequisite(s): ISAT 350 or BIO 240 and BI...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 38
+Course Name: Ethical, Legal and Social Implications of Biotechnology
+Course Code: ISAT 456. Ethical, Legal and Social Implications of Biotechnology
+Prerequisites: ISAT 171 and ISAT 271 or BIOT 260 or permission of the instructor
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369792
+Description length: 543 characters
+Description preview: ISAT 456. Ethical, Legal and Social Implications of Biotechnology Credits 3.00 PeopleSoft Course ID 010658 Grading Basis GRD The ethical, legal, and social implications of the field of biotechnology and its applications are explored in this course. Students will analyze at an in-depth level the social impacts and ethical implications of human subjects and biological materials research, cloning, human genetic engineering, and transgenic agricultural crops. Prerequisite(s): ISAT 171 and ISAT 271 o...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 39
+Course Name: Awareness and Understanding of Chemical, Biological, and Radiological Weapons of Mass Destruction
+Course Code: ISAT 459. Awareness and Understanding of Chemical, Biological, and Radiological Weapons of Mass Destruction
+Prerequisites: None
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369810
+Description length: 597 characters
+Description preview: ISAT 459. Awareness and Understanding of Chemical, Biological, and Radiological Weapons of Mass Destruction Cross listed with: IA 459 Credits 3.00 PeopleSoft Course ID 012089 Grading Basis GRD This course introduces awareness, science, and societal impact of Weapons of Mass Destruction (WMD) agents. Students study the development of vaccines, therapeutic and diagnostic drugs used in the detection and treatment of these agents. The course consists of lectures and safety training sessions that int...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 40
+Course Name: Gender Issues in Science
+Course Code: ISAT 485. Gender Issues in Science
+Prerequisites: None
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369816
+Description length: 620 characters
+Description preview: ISAT 485. Gender Issues in Science Cross listed with: WGSS 485 Credits 3.00 PeopleSoft Course ID 012465 Grading Basis GRD An interdisciplinary course that looks at the scientific process, science practitioners, and science students through the lens of gender analysis. Students read literature, lead discussions, perform experiments, and analyze both data and processes to address the effects of educational systems on the preparation and careers of scientists, the influence of politics and culture ...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 41
+Course Name: Cultural, Ethical, Legal and Social Issues in Computing
+Course Code: ISAT 440. Cultural, Ethical, Legal and Social Issues in Computing
+Prerequisites: ISAT 271 or permission of the instructor
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=372028
+Description length: 607 characters
+Description preview: ISAT 440. Cultural, Ethical, Legal and Social Issues in Computing Credits 3.00 PeopleSoft Course ID 008226 Grading Basis GRD An exploration of the cultural, ethical, legal and social issues inherent in computing. This course is designed to strengthen students’ proclivity and ability to consider and communicate about the reciprocal impacts of computing technology on people and the environment, particularly as it pertains to their roles in designing, developing, procuring, implementing or maintain...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 42
+Course Name: Simulation and Modeling
+Course Code: ISAT 441. Simulation and Modeling
+Prerequisites: ISAT 211 or permission of the instructor
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=372034
+Description length: 358 characters
+Description preview: ISAT 441. Simulation and Modeling Credits 3.00 PeopleSoft Course ID 014090 Grading Basis GRD The purpose of this class is to introduce students to the use of models to understand, analyze and improve systems in several areas of science and technology through computer simulation modeling techniques. Prerequisite(s): ISAT 211 or permission of the instructor....
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 43
+Course Name: Software Engineering and Agile Development
+Course Code: ISAT 445. Software Engineering and Agile Development
+Prerequisites: ISAT 340
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369741
+Description length: 513 characters
+Description preview: ISAT 445. Software Engineering and Agile Development Credits 3.00 PeopleSoft Course ID 000829 Grading Basis GRD Study of means for the development and maintenance of high quality software products delivered on time and within budget. Topics include requirements analysis and specification, software design, implementation, testing, maintenance, project management, ethics, and the responsibilities of software engineering professionals. Focuses primarily on agile software development. Prerequisite(s...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 44
+Course Name: Interaction Design
+Course Code: ISAT 447. Interaction Design
+Prerequisites: None
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369812
+Description length: 513 characters
+Description preview: ISAT 447. Interaction Design Cross listed with: WRTC 447 Credits 3.00 PeopleSoft Course ID 012149 Grading Basis GRD Study of and practice with processes, principles, tools, models, and techniques for designing interactions between humans and digital products and systems. Topics include physiological and psychological factors affecting interaction design, interaction design process, interaction models, styles, and paradigms, design notations and representations, prototyping, and interaction desig...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 45
+Course Name: Emerging Topics in Applied Data Science
+Course Code: ISAT 449. Emerging Topics in Applied Data Science
+Prerequisites: ISAT 341 or permission of the instructor
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=372196
+Description length: 714 characters
+Description preview: ISAT 449. Emerging Topics in Applied Data Science Credits 3.00 PeopleSoft Course ID 014315 Grading Basis GRD This course will cover selected emerging topics in applied data science of interests (e.g., automation, data privacy and security, data science in the cloud, artificial neural network and deep learning, natural language processing, text mining). It will help students develop the meta-cognitive skills needed to become proficient in using and identifying new technologies (including programm...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 46
+Course Name: Energy Economics and Policy
+Course Code: ISAT 411. Energy Economics and Policy
+Prerequisites: ISAT 311 or permission of the instructor
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369783
+Description length: 544 characters
+Description preview: ISAT 411. Energy Economics and Policy Credits 3.00 PeopleSoft Course ID 009693 Grading Basis GRD This course is concerned with methods for analyzing the economics, environmental and societal benefits of energy technologies. Topics include optimization techniques, utility planning and finance, cost-benefit techniques, discounting for time and risk, econometric models and input-output analysis. The role of government in determining energy costs supply and markets will be considered. Prerequisite(s...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 47
+Course Name: Options for Energy Efficiency
+Course Code: ISAT 413. Options for Energy Efficiency
+Prerequisites: ISAT 310 and ISAT 311 or consent of the instructor
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369767
+Description length: 609 characters
+Description preview: ISAT 413. Options for Energy Efficiency Credits 3.00 PeopleSoft Course ID 007049 Grading Basis GRD This course makes detailed examination of new technologies to increase the efficiency of energy conversion, transportation systems and end-use technologies. Examples include MHD, combined-cycle systems, advanced nuclear reactors, intelligent transportation systems, high-efficiency lighting, energy management and utilization of low-temperature heat. Consideration is made of the socioeconomic and gov...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 48
+Course Name: Sustainable Energy Development
+Course Code: ISAT 410. Sustainable Energy Development
+Prerequisites: ISAT 310 or permission of the instructor
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369749
+Description length: 571 characters
+Description preview: ISAT 410. Sustainable Energy Development Credits 3.00 PeopleSoft Course ID 002519 Grading Basis GRD This course is concerned with science and the applications of solar and other renewable technologies, e.g., solar thermal electric, photovoltaics, wind power, biomass-derived alcohols, solar hydrogen and ocean thermal energy conversion Energy storage systems and materials, combined renewable conventional systems for peaking and load management and alternative energy sources for transportation will...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 49
+Course Name: Energy Fundamentals II
+Course Code: ISAT 414. Energy Fundamentals II
+Prerequisites: ISAT 310 or permission of the instructor
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369803
+Description length: 515 characters
+Description preview: ISAT 414. Energy Fundamentals II Credits 3.00 PeopleSoft Course ID 011552 Grading Basis GRD Introduction to the sciences of fluid mechanics and heat transfer and the physical laws governing the mechanical behavior of liquids and gasses. Conservation of mass, energy and momentum. Discussion of heat transfer by one-dimensional conduction, convection and radiation. Fluid statics, internal and external fluid flow, pipe networks and heat exchanger analysis. Prerequisite(s): ISAT 310 or permission of ...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 50
+Course Name: International Energy Studies
+Course Code: ISAT 416. International Energy Studies
+Prerequisites: ISAT 212 and ISAT 253
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369778
+Description length: 467 characters
+Description preview: ISAT 416. International Energy Studies Credits 3.00 PeopleSoft Course ID 008814 Grading Basis GRD Study-abroad course examining international energy problems and providing team-oriented project experiences. Addresses energy issues associated with economic and social development. Project participation, tours and meetings with local experts illustrate energy-related problems that are compared with those in the United States. Prerequisite(s): ISAT 212 and ISAT 253 ....
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 51
+Course Name: Environmental Analysis and Modeling
+Course Code: ISAT 420. Environmental Analysis and Modeling
+Prerequisites: ISAT 321 or permission of the instructor
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369748
+Description length: 521 characters
+Description preview: ISAT 420. Environmental Analysis and Modeling Credits 3.00 PeopleSoft Course ID 002380 Grading Basis GRD This course explores applications of mathematical techniques and computer models to the environmental field. The course introduces the principles underlying environmental analysis and modeling, including limitations and pitfalls. Several environmental models and analytical systems are then discussed and applied, using a variety of computational platforms. Prerequisite(s): ISAT 321 or permissi...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 52
+Course Name: Environmental Policy and Regulation
+Course Code: ISAT 421. Environmental Policy and Regulation
+Prerequisites: ISAT 321
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369784
+Description length: 503 characters
+Description preview: ISAT 421. Environmental Policy and Regulation Credits 3.00 PeopleSoft Course ID 009742 Grading Basis GRD This course will familiarize students with basic environmental laws and regulations. The course discusses the purpose of environmental policy, the role of environmental economics in policy decisions and the policy instruments available to environmental regulators. Current federal and state statutes affecting waste disposal, air quality and water quality are discussed. Prerequisite(s): ISAT 32...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 53
+Course Name: Industrial Environmental Management
+Course Code: ISAT 422. Industrial Environmental Management
+Prerequisites: None
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369740
+Description length: 504 characters
+Description preview: ISAT 422. Industrial Environmental Management Credits 3.00 PeopleSoft Course ID 000791 Grading Basis GRD This course addresses environmental issues faced by industry, including such topics as waste management, chemical inventories, pollution prevention and discharge permitting. Industrial ecology is introduced as an approach to the development of a sustainable industrial society, including treatment of life cycle analysis, design for environment, environmentally conscious manufacturing and ISO14...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 54
+Course Name: Environmental Remediation
+Course Code: ISAT 423. Environmental Remediation
+Prerequisites: ISAT 321 or permission of the instructor
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369760
+Description length: 506 characters
+Description preview: ISAT 423. Environmental Remediation Credits 3.00 PeopleSoft Course ID 005653 Grading Basis GRD This course will examine chemical, physical, economic and regulatory aspects of the remediation of contaminated soil and groundwater. Topics include chemical properties of major contaminants, environmental site assessments, remediation design, and current and emerging remediation technologies and their limitations in soil and groundwater restoration. Prerequisite(s): ISAT 321 or permission of the instr...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 55
+Course Name: Natural Resource Management
+Course Code: ISAT 424. Natural Resource Management
+Prerequisites: ISAT 321 or permission of the instructor
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369791
+Description length: 533 characters
+Description preview: ISAT 424. Natural Resource Management Credits 3.00 PeopleSoft Course ID 010571 Grading Basis GRD This course focuses on how resource management decisions affect the human and natural communities involved. Topics include definition and importance of natural resources, resource management styles and policies, and planning for resource conservation. Conservation biology is introduced as a tool for developing sustainable resource use policies. Mandatory weekend field trip. Prerequisite(s): ISAT 321 ...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 56
+Course Name: Environmental Hydrology
+Course Code: ISAT 425. Environmental Hydrology
+Prerequisites: ISAT 320
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369769
+Description length: 448 characters
+Description preview: ISAT 425. Environmental Hydrology Credits 3.00 PeopleSoft Course ID 007429 Grading Basis GRD This course integrates the study of surface water and ground water hydrology and examines current technologies used to assess the behavior and quality of water in the environment. Topics include monitoring and management at the watershed level, the influence of wetlands on water quality, and the impact of current regulations. Prerequisite(s): ISAT 320 ....
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 57
+Course Name: Environmental Information Systems
+Course Code: ISAT 426. Environmental Information Systems
+Prerequisites: None
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369795
+Description length: 492 characters
+Description preview: ISAT 426. Environmental Information Systems Credits 3.00 PeopleSoft Course ID 011234 Grading Basis GRD This course provides students with practical experience applying advanced environmental information systems technologies to environmental problems. Students will employ such technologies as decision support systems, geographic information systems, expert systems, relational databases, multimedia systems, and modeling and simulation. This course is often offered in a study-abroad format....
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 58
+Course Name: Industrial Hygiene
+Course Code: ISAT 427. Industrial Hygiene
+Prerequisites: None
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369763
+Description length: 451 characters
+Description preview: ISAT 427. Industrial Hygiene Credits 3.00 PeopleSoft Course ID 006195 Grading Basis GRD This course provides an introductory survey of the field of industrial hygiene. Chemical hazards are addressed first, focusing on respiratory and dermal exposures, followed by a treatment of physical hazards including sound, radiation and temperature. The course includes industrial case studies illustrating administrative and engineering controls in common use....
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 59
+Course Name: Industrial Ecology
+Course Code: ISAT 428. Industrial Ecology
+Prerequisites: None
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369805
+Description length: 483 characters
+Description preview: ISAT 428. Industrial Ecology Credits 3.00 PeopleSoft Course ID 011564 Grading Basis GRD Industrial Ecology, the ‘science of sustainability’, seeks to encourage the development of a sustainable industrial society. This course introduces and examines this relatively new field of inquiry and practice. We address various practical topics which are associated with Industrial Ecology, including Life Cycle Assessment, Design for Environment, and Environmentally Conscious Manufacturing....
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 60
+Course Name: Sustainability: An Ecological Perspective
+Course Code: ISAT 429. Sustainability: An Ecological Perspective
+Prerequisites: ISAT 320
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369804
+Description length: 573 characters
+Description preview: ISAT 429. Sustainability: An Ecological Perspective Cross listed with: GEOG 429 Credits 3.00 PeopleSoft Course ID 011555 Grading Basis GRD This course examines present global environmental impacts and efforts made to change production and consumption patterns toward those that reduce impact or promote increased ecosystems health. The focus lies in understanding the basic resources of productivity including soils, agricultural systems, agroforestry, forestry, and aquatic environments and applying...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 61
+Course Name: Local Agriculture and Farm Internships
+Course Code: ISAT 473. Local Agriculture and Farm Internships
+Prerequisites: None
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369820
+Description length: 546 characters
+Description preview: ISAT 473. Local Agriculture and Farm Internships Credits 4.00 PeopleSoft Course ID 013044 Grading Basis GRD The objectives for this course include understanding local ecology and its impacts on farming, as well as how farming impacts local ecology; practicing diversified farming techniques; understanding how small-scale farms operate as businesses; examining localization and slow-food movements and recognizing the impacts of globalized or industrial food and fiber production; identifying the str...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 62
+Course Name: Political Ecology
+Course Code: ISAT 474. Political Ecology
+Prerequisites: None
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369826
+Description length: 605 characters
+Description preview: ISAT 474. Political Ecology Credits 3.00 PeopleSoft Course ID 013789 Grading Basis GRD This seminar focuses on political ecology as a framework and body of work that examines environmental change, particularly notions of degradation, through analyses of complex social, economic, political and ecological interrelationships. Course materials raise and address questions of how people study and have perceived ways in which human societies and various ‘environments’ shape one another over time, as we...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 63
+Course Name: Materials and Manufacturing Processes
+Course Code: ISAT 430. Materials and Manufacturing Processes
+Prerequisites: ISAT 211 or permission of the instructor
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=371869
+Description length: 754 characters
+Description preview: ISAT 430. Materials and Manufacturing Processes Credits 3.00 PeopleSoft Course ID 003769 Grading Basis GRD The purpose of this class is to introduce chemical and physical properties of materials (metals, ceramics, polymers, composites, sustainable materials), manufacturing processes (casting, finishing, molding, forming, joining, and machining) and automated design and manufacturing. The topics include the following: material properties and product attributes; engineering materials; solidificati...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 64
+Course Name: Advanced Manufacturing Processes and Systems
+Course Code: ISAT 431. Advanced Manufacturing Processes and Systems
+Prerequisites: ISAT 330 and ISAT 251
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=371870
+Description length: 499 characters
+Description preview: ISAT 431. Advanced Manufacturing Processes and Systems Credits 3.00 PeopleSoft Course ID 006108 Grading Basis GRD This course provides an introduction to processes, systems and sustainability improvement in advanced manufacturing. Topics include advanced manufacturing processes and systems, such as additive manufacturing, nano/micro-manufacturing, digital manufacturing, industrial sustainability analysis and systems thinking in sustainable manufacturing. Prerequisite(s): ISAT 330 and ISAT 251 ....
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 65
+Course Name: Materials Selection in Product Design
+Course Code: ISAT 432. Materials Selection in Product Design
+Prerequisites: ISAT 330 and junior standing or permission of the instructor
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369750
+Description length: 668 characters
+Description preview: ISAT 432. Materials Selection in Product Design Credits 3.00 PeopleSoft Course ID 002959 Grading Basis GRD This course deals with the interplay among requirements specifications, design, economics, environment, energy, materials selection, fabrication, manufacturing cost and product life cycle considerations. Students will complete a product design case study from requirements to final design concept, including translating requirements to design, selecting appropriate materials and choosing betw...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 66
+Course Name: Foundations of Lean and Six Sigma
+Course Code: ISAT 433. Foundations of Lean and Six Sigma
+Prerequisites: ISAT 330 or admission to the global supply chain management minor
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369754
+Description length: 577 characters
+Description preview: ISAT 433. Foundations of Lean and Six Sigma Credits 3.00 PeopleSoft Course ID 004416 Grading Basis GRD This course addresses the questions: What is Lean? What is Six Sigma? How are they different, why do many organizations combine them and how should they be applied in complex industrial/supply chain systems? Students will learn to evaluate process stability, map and model business processes, select and apply appropriate analytical methods, and implement and document the improved process. Prereq...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 67
+Course Name: Industrial Informatics
+Course Code: ISAT 434. Industrial Informatics
+Prerequisites: ISAT 211 and ISAT 251 or MATH 220 or admission to the global supply chain management minor
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=371782
+Description length: 586 characters
+Description preview: ISAT 434. Industrial Informatics Credits 3.00 PeopleSoft Course ID 013970 Grading Basis GRD Hands-on application of advanced analytical methods selected from topics in supply chain management, forecasting, measurement systems analysis (MSA), quality and process improvement, marketing research and analytics, design of experiments (DOE), and reliability modeling. Data acquisition from enterprise databases and industrial sources and analysis leveraging big data are addressed. Prerequisite(s): ISAT ...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 68
+Course Name: Lean Six Sigma Applications
+Course Code: ISAT 435. Lean Six Sigma Applications
+Prerequisites: ISAT 433 or permission of the instructor
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369738
+Description length: 465 characters
+Description preview: ISAT 435. Lean Six Sigma Applications Credits 3.00 PeopleSoft Course ID 000488 Grading Basis GRD This course focuses on real-world applications of Lean Six Sigma in production and supply chain environments with an emphasis on current events. Students will learn advanced analytical methods and explore the implications of just-in-time production in an increasingly connected and complex global environment. Prerequisite(s): ISAT 433 or permission of the instructor....
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 69
+Course Name: Technological Innovation and Sustainable Design
+Course Code: ISAT 437. Technological Innovation and Sustainable Design
+Prerequisites: ISAT 211 and junior standing or permission of the instructor
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=371783
+Description length: 731 characters
+Description preview: ISAT 437. Technological Innovation and Sustainable Design Credits 3.00 PeopleSoft Course ID 013965 Grading Basis GRD This course is a holistic approach to the nature of technological innovation as an intrinsic dynamic of human society, with an explicit focus on understanding why innovations succeed or fail and the compelling need for sustainable design. The critical relationship between technical innovation and the design process is explored through case studies that illustrate sustainability-in...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 70
+Course Name: Energy Economics and Policy
+Course Code: ISAT 411. Energy Economics and Policy
+Prerequisites: ISAT 311 or permission of the instructor
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369783
+Description length: 544 characters
+Description preview: ISAT 411. Energy Economics and Policy Credits 3.00 PeopleSoft Course ID 009693 Grading Basis GRD This course is concerned with methods for analyzing the economics, environmental and societal benefits of energy technologies. Topics include optimization techniques, utility planning and finance, cost-benefit techniques, discounting for time and risk, econometric models and input-output analysis. The role of government in determining energy costs supply and markets will be considered. Prerequisite(s...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 71
+Course Name: Environmental Policy and Regulation
+Course Code: ISAT 421. Environmental Policy and Regulation
+Prerequisites: ISAT 321
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369784
+Description length: 503 characters
+Description preview: ISAT 421. Environmental Policy and Regulation Credits 3.00 PeopleSoft Course ID 009742 Grading Basis GRD This course will familiarize students with basic environmental laws and regulations. The course discusses the purpose of environmental policy, the role of environmental economics in policy decisions and the policy instruments available to environmental regulators. Current federal and state statutes affecting waste disposal, air quality and water quality are discussed. Prerequisite(s): ISAT 32...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 72
+Course Name: Cultural, Ethical, Legal and Social Issues in Computing
+Course Code: ISAT 440. Cultural, Ethical, Legal and Social Issues in Computing
+Prerequisites: ISAT 271 or permission of the instructor
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=372028
+Description length: 607 characters
+Description preview: ISAT 440. Cultural, Ethical, Legal and Social Issues in Computing Credits 3.00 PeopleSoft Course ID 008226 Grading Basis GRD An exploration of the cultural, ethical, legal and social issues inherent in computing. This course is designed to strengthen students’ proclivity and ability to consider and communicate about the reciprocal impacts of computing technology on people and the environment, particularly as it pertains to their roles in designing, developing, procuring, implementing or maintain...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 73
+Course Name: Regulatory Issues Biotechnology
+Course Code: ISAT 455. Regulatory Issues Biotechnology
+Prerequisites: ISAT 350 or BIO 240 and BIOT 260 or permission of the instructor
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369785
+Description length: 539 characters
+Description preview: ISAT 455. Regulatory Issues Biotechnology Credits 3.00 PeopleSoft Course ID 009889 Grading Basis GRD This course examines the policies and guidelines of federal government agencies that regulate the use of recombinant DNA technology, genetically engineered organisms and the manufacturing of biotechnology products. Issues of product safety, product labeling, physical and biological containment, environmental release, and mammalian cloning are presented. Prerequisite(s): ISAT 350 or BIO 240 and BI...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 74
+Course Name: Ethical, Legal and Social Implications of Biotechnology
+Course Code: ISAT 456. Ethical, Legal and Social Implications of Biotechnology
+Prerequisites: ISAT 171 and ISAT 271 or BIOT 260 or permission of the instructor
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369792
+Description length: 543 characters
+Description preview: ISAT 456. Ethical, Legal and Social Implications of Biotechnology Credits 3.00 PeopleSoft Course ID 010658 Grading Basis GRD The ethical, legal, and social implications of the field of biotechnology and its applications are explored in this course. Students will analyze at an in-depth level the social impacts and ethical implications of human subjects and biological materials research, cloning, human genetic engineering, and transgenic agricultural crops. Prerequisite(s): ISAT 171 and ISAT 271 o...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 75
+Course Name: Gender Issues in Science
+Course Code: ISAT 485. Gender Issues in Science
+Prerequisites: None
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369816
+Description length: 620 characters
+Description preview: ISAT 485. Gender Issues in Science Cross listed with: WGSS 485 Credits 3.00 PeopleSoft Course ID 012465 Grading Basis GRD An interdisciplinary course that looks at the scientific process, science practitioners, and science students through the lens of gender analysis. Students read literature, lead discussions, perform experiments, and analyze both data and processes to address the effects of educational systems on the preparation and careers of scientists, the influence of politics and culture ...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 76
+Course Name: Topics in Science, Technology and Society
+Course Code: ISAT 483. Topics in Science, Technology and Society
+Prerequisites: ISAT 171 and ISAT 271
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=372194
+Description length: 484 characters
+Description preview: ISAT 483. Topics in Science, Technology and Society Credits 3.00 PeopleSoft Course ID 014348 Grading Basis GRD This course engages students in key theories, methods and approaches from the field of science, technology and society (STS) and its related fields (history, philosophy, law, sociology, anthropology, political science, economics and communication) to address selected problems at the intersection of science, technology and society. Prerequisite(s): ISAT 171 and ISAT 271 ....
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 77
+Course Name: Science, Technology and Society Futures Laboratory
+Course Code: ISAT 487. Science, Technology and Society Futures Laboratory
+Prerequisites: ISAT 171 or ISAT 271 or declared STS minor
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=372193
+Description length: 1156 characters
+Description preview: ISAT 487. Science, Technology and Society Futures Laboratory Credits 1.00 - 3.00 PeopleSoft Course ID 014346 Grading Basis GRD In the STS futures lab students deepen their knowledge of key theories and methods of the field of science, technology and society. Students conduct independent research on a topic under close mentorship of faculty and within an engaged community of students who are interested in creatively and critically reflecting on the roles of science and technology within society. ...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 78
+Course Name: Biotechnology Issues in Science and Technology [C3NS]
+Course Code: ISAT 113. Biotechnology Issues in Science and Technology [C3NS]
+Prerequisites: None
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369733
+Description length: 579 characters
+Description preview: ISAT 113. Biotechnology Issues in Science and Technology [C3NS] Credits 3.00 PeopleSoft Course ID 000203 Grading Basis GRD This course is an applied introduction to biological systems, as an entry point for the understanding and analysis of biotechnological solutions. Topics include the way in which features of biochemical structure and function, information flow within cells, genetic inheritance, metabolism, and immune responses can be used to solve problems related to disease, food and the env...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 79
+Course Name: Biotechnology Issues in Science and Technology Laboratory [C3L]
+Course Code: ISAT 113L. Biotechnology Issues in Science and Technology Laboratory [C3L]
+Prerequisites: ISAT 113
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=372334
+Description length: 577 characters
+Description preview: ISAT 113L. Biotechnology Issues in Science and Technology Laboratory [C3L] Credits 1.00 PeopleSoft Course ID 014490 Grading Basis GRD Students will build practical and scientific literacy skills in the context of a life science wet lab. Descriptive and inquiry-based activities will include elements of study design, protocol implementation, and data collection and analysis. Recordkeeping and analytical skills will develop through in-lab documentation and comprehensive reports. May be used for gen...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 80
+Course Name: Topics in Applied Calculus in ISAT [C3QR]
+Course Code: ISAT 151. Topics in Applied Calculus in ISAT [C3QR]
+Prerequisites: None
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369796
+Description length: 498 characters
+Description preview: ISAT 151. Topics in Applied Calculus in ISAT [C3QR] Credits 4.00 PeopleSoft Course ID 011502 Grading Basis GRD This course introduces the concepts of differential and integral calculus and ordinary differential equations to model real-world applications in science, business, technology and economics. This course includes a computer laboratory component emphasizing modeling and numerical methods. Course assumes familiarity with algebra and trigonometry. May be used for general education credit....
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 81
+Course Name: Introduction to Holistic Problem Solving in the ISAT Major
+Course Code: ISAT 190. Introduction to Holistic Problem Solving in the ISAT Major
+Prerequisites: None
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=372026
+Description length: 356 characters
+Description preview: ISAT 190. Introduction to Holistic Problem Solving in the ISAT Major Credits 1.00 PeopleSoft Course ID 013754 Grading Basis GRD This course introduces holistic problem solving through the lens of the ISAT major. Skills such as effective teaming, information literacy, systems thinking, stakeholder identification and complex problem analysis are developed....
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 82
+Course Name: Environmental Issues in Science and Technology (2,3) [C3PP]
+Course Code: ISAT 112. Environmental Issues in Science and Technology (2,3) [C3PP]
+Prerequisites: None
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369747
+Description length: 466 characters
+Description preview: ISAT 112. Environmental Issues in Science and Technology (2,3) [C3PP] Credits 4.00 PeopleSoft Course ID 002194 Grading Basis GRD This course integrates the study of environmental chemistry, ecology and sustainability science to achieve a conceptual and quantitative understanding of environmental issues including air pollution, climate change, ozone depletion, acid deposition, plastics, waste and biodiversity. This course may be used for general education credit....
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 83
+Course Name: Topics in Applied Physics in ISAT
+Course Code: ISAT 152. Topics in Applied Physics in ISAT
+Prerequisites: ISAT 151 or permission of the instructor
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369802
+Description length: 532 characters
+Description preview: ISAT 152. Topics in Applied Physics in ISAT Credits 4.00 PeopleSoft Course ID 011519 Grading Basis GRD This course introduces topics in general physics including one- and two-dimensional motion, mechanics, energy, waves, electricity, magnetism, optics, lasers, and early quantum theory. Vectors, algebra, and differential and integral calculus, are used to model physical system behavior. Laboratory experiments and computer exercises enhance understanding of the concepts. Prerequisite(s): ISAT 151 ...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 84
+Course Name: Governance of Sociotechnical Systems
+Course Code: ISAT 171. Governance of Sociotechnical Systems
+Prerequisites: None
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=372025
+Description length: 391 characters
+Description preview: ISAT 171. Governance of Sociotechnical Systems Credits 3.00 PeopleSoft Course ID 005860 Grading Basis GRD Solutions to human problems are mediated by economic and political institutions, which in turn help to shape technology and science. The course covers basic political and economic concepts, institutions and processes as they relate to American and international science and technology....
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 85
+Course Name: Energy Issues in Science and Technology
+Course Code: ISAT 212. Energy Issues in Science and Technology
+Prerequisites: ISAT 152 or Permission of the Instructor
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369761
+Description length: 559 characters
+Description preview: ISAT 212. Energy Issues in Science and Technology Credits 3.00 PeopleSoft Course ID 005767 Grading Basis GRD Introduction to scientific and economic concepts relevant to energy. Concepts are taught within the context of three or four themes, e.g. residential energy efficiency, renewable energy sources, “make-or-buy” fossil energy application and space power systems. Themes may change from year to year reflecting contemporary issues and opportunities to link with industry and government agencies....
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 86
+Course Name: Topics in Applied Statistics in ISAT [C3QR]
+Course Code: ISAT 251. Topics in Applied Statistics in ISAT [C3QR]
+Prerequisites: Sophomore standing or permission of the instructor
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369801
+Description length: 689 characters
+Description preview: ISAT 251. Topics in Applied Statistics in ISAT [C3QR] Credits 3.00 PeopleSoft Course ID 011508 Grading Basis GRD This course introduces statistical thinking – the discipline and methods for collecting, analyzing, and interpreting data for making decisions, doing science, and understanding our world. Topics covered include an introduction to data analysis methods, probability and chance, statistical reasoning and inference, and experimental design. The course includes a laboratory component empha...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 87
+Course Name: Technology, Science and Society
+Course Code: ISAT 271. Technology, Science and Society
+Prerequisites: ISAT 171
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=372027
+Description length: 433 characters
+Description preview: ISAT 271. Technology, Science and Society Credits 3.00 PeopleSoft Course ID 000970 Grading Basis GRD This course introduces the social aspects of technology and science. It covers social science methods and related philosophical and ethical analyses. Students learn how the practice of science relates to the human-built world and why critical evaluations of science and technology policies are important. Prerequisite(s): ISAT 171 ....
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 88
+Course Name: Issues in Modern Production Systems
+Course Code: ISAT 211. Issues in Modern Production Systems
+Prerequisites: None
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369774
+Description length: 797 characters
+Description preview: ISAT 211. Issues in Modern Production Systems Credits 3.00 PeopleSoft Course ID 008480 Grading Basis GRD This course explores the principles of making, designing, integrating and improving production systems by asking the following questions: What is the right way to transform materials and who (or what) determines that? How do political, environmental, social, technological, legal/regulatory, ethical and economic factors impact the way individuals and organizations make, design, integrate and i...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 89
+Course Name: Programming and Problem Solving
+Course Code: ISAT 252. Programming and Problem Solving
+Prerequisites: Sophomore standing or permission of the instructor
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369770
+Description length: 585 characters
+Description preview: ISAT 252. Programming and Problem Solving Credits 3.00 PeopleSoft Course ID 007599 Grading Basis GRD This course is an introduction to computational thinking and formal logic. Students create software to solve problems in applied science, business and engineering taking social context into account. Programming paradigms include procedural, object-oriented and event-driven. Emphasis is placed on effective analysis, planning, documentation, communication and teamwork in professional software devel...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 90
+Course Name: Introduction to Systems Thinking for Complex Problems
+Course Code: ISAT 290. Introduction to Systems Thinking for Complex Problems
+Prerequisites: ISAT 190 or permission of the instructor and ISAT 212 with a grade of “C-” or better
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369824
+Description length: 680 characters
+Description preview: ISAT 290. Introduction to Systems Thinking for Complex Problems Credits 3.00 PeopleSoft Course ID 013753 Grading Basis GRD Students will develop skills to apply systems thinking methodology to investigate, define and describe complex problems. They will build a recognition and appreciation of common causal structures that influence the evolution of a problem over time. Structures include interactions between cultural, institutional, natural and technological factors. Collaboration, integration o...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 91
+Course Name: Applied Computing, Instrumentation and Measurement
+Course Code: ISAT 300. Applied Computing, Instrumentation and Measurement
+Prerequisites: ISAT 252 and a minimum grade of “C-” in either ISAT 251 or MATH 220
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=372347
+Description length: 943 characters
+Description preview: ISAT 300. Applied Computing, Instrumentation and Measurement Credits 3.00 PeopleSoft Course ID 014426 Grading Basis GRD This course covers the fundamental nature of measurement in the practice of science and technology. It examines how computing technology is applied to the collection, storage, processing and presentation of data. In addition to discussions about how and why measurements are taken, the uncertainty involved in all measurements and the statistical methods used for analysis will be...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 92
+Course Name: Holistic Problem-Solving Workshop I
+Course Code: ISAT 390. Holistic Problem-Solving Workshop I
+Prerequisites: ISAT 290 and ISAT 271
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369825
+Description length: 630 characters
+Description preview: ISAT 390. Holistic Problem-Solving Workshop I Credits 3.00 PeopleSoft Course ID 013759 Grading Basis GRD In this course, students will practice holistic problem-solving approaches to analyze and propose solutions for complex problems that involve a mix of scientific, technological and societal elements. The course will use a variety of case studies that represent real-world problems that significantly impact society. For each case study, students will explore the system dynamics from which the p...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 93
+Course Name: Capstone Experience I
+Course Code: ISAT 490. Capstone Experience I
+Prerequisites: None
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369764
+Description length: 543 characters
+Description preview: ISAT 490. Capstone Experience I Credits 1.00 PeopleSoft Course ID 006296 Grading Basis GRD This is the first of a four-course sequence. Students perform an independent research project, either alone or within an investigative team, to identify and analyze a science- or technology-based problem (broadly defined), culminating in a public presentation at the ISAT Senior Symposium. In this course, students will identify an appropriate problem to investigate for their Capstone experience and assemble...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 94
+Course Name: Holistic Problem-Solving Workshop II
+Course Code: ISAT 391. Holistic Problem-Solving Workshop II
+Prerequisites: ISAT 390
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369827
+Description length: 566 characters
+Description preview: ISAT 391. Holistic Problem-Solving Workshop II Credits 3.00 PeopleSoft Course ID 013793 Grading Basis GRD This course continues the practice of holistic problem-solving initiated in ISAT 390 . In this follow-up course, students will operate in a self-guided manner to analyze and propose solutions for complex problems that involve a mix of scientific, technological, and societal elements. Students will explore the system dynamics from which the problem emerges and evaluate both short- and long-te...
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 95
+Course Name: Senior Capstone Project I
+Course Code: ISAT 491. Senior Capstone Project I
+Prerequisites: None
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369781
+Description length: 415 characters
+Description preview: ISAT 491. Senior Capstone Project I Credits 1.00 PeopleSoft Course ID 009222 Grading Basis GRD First course in a three-course sequence. Student generates an idea for and writes a proposal for an independent or team-based research project. Student must identify and analyze a science- or technology-based problem (broadly defined), identify potential solutions, recommend an approach, and prepare a written proposal....
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 96
+Course Name: Senior Capstone Project II
+Course Code: ISAT 492. Senior Capstone Project II
+Prerequisites: None
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369744
+Description length: 313 characters
+Description preview: ISAT 492. Senior Capstone Project II Credits 2.00 PeopleSoft Course ID 000868 Grading Basis GRD Second course in a three-course sequence. Student performs the bulk of the research needed for an independent research project, either alone or within an investigative team, to address a technologically based problem....
+--------------------------------------------------------------------------------
+
+================================================================================
+Course ID: 97
+Course Name: Senior Capstone Project III
+Course Code: ISAT 493. Senior Capstone Project III
+Prerequisites: None
+URL: https://catalog.jmu.edu/preview_course_nopop.php?catoid=62&coid=369755
+Description length: 350 characters
+Description preview: ISAT 493. Senior Capstone Project III Credits 2.00 PeopleSoft Course ID 004567 Grading Basis GRD Third course in a three-course sequence. Student finishes the research and prepares an oral and a written report on the work (either alone or within an investigative team), addressing a technologically based problem and developing alternative solutions....
+--------------------------------------------------------------------------------
+

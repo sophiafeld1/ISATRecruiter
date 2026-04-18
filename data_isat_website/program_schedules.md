@@ -101,10 +101,10 @@ Choose 12 credit hours from the following course options:
 ISAT 440. Cultural, Ethical, Legal and Social Issues in Computing Credits: 3.00
 ISAT 441. Simulation and Modeling
 Print (opens a new window)
+ISAT 480: ISAT 480. Topics in Integrated Science and Technology
+Credits 1.00 - 4.00 PeopleSoft Course ID 006412 Grading Basis GRDJunior or senior standing only.
 ISAT 441. Simulation and Modeling
-
 Credits 3.00 PeopleSoft Course ID 014090 Grading Basis GRD
-
 The purpose of this class is to introduce students to the use of models to understand, analyze and improve systems in several areas of science and technology through computer simulation modeling techniques. Prerequisite(s): ISAT 211 or permission of the instructor.
 
 
