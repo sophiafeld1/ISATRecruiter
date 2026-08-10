@@ -12,6 +12,42 @@ project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 load_dotenv(dotenv_path=os.path.join(project_root, '.env'))
 
 
+def _db_connect_kwargs() -> dict:
+    """Resolve Postgres connection settings from env (local, Railway, or DATABASE_URL)."""
+    database_url = (os.getenv("DATABASE_URL") or "").strip()
+    if database_url:
+        return {"dsn": database_url}
+
+    if os.getenv("PGHOST"):
+        return {
+            "host": os.getenv("PGHOST"),
+            "port": os.getenv("PGPORT", "5432"),
+            "database": os.getenv("PGDATABASE", "railway"),
+            "user": os.getenv("PGUSER", "postgres"),
+            "password": os.getenv("PGPASSWORD", ""),
+        }
+
+    return {
+        "host": os.getenv("DB_HOST", "localhost"),
+        "port": os.getenv("DB_PORT", "5432"),
+        "database": os.getenv("DB_NAME", "isat_recruiter"),
+        "user": os.getenv("DB_USER", "postgres"),
+        "password": os.getenv("DB_PASSWORD", ""),
+    }
+
+
+def _connect_from_kwargs(kwargs: dict):
+    if "dsn" in kwargs:
+        return psycopg2.connect(kwargs["dsn"])
+    return psycopg2.connect(
+        host=kwargs["host"],
+        port=kwargs["port"],
+        database=kwargs["database"],
+        user=kwargs["user"],
+        password=kwargs["password"],
+    )
+
+
 def is_trustworthy_abet_course_title(name: str | None) -> bool:
     """
     True when ABET `course_name` looks like a real title, not syllabus boilerplate
@@ -45,58 +81,52 @@ class LinkDatabase:
         self.create_table()
     
     def connect(self):
-        host = os.getenv("DB_HOST", "localhost")
-        port = os.getenv("DB_PORT", "5432")
-        database = os.getenv("DB_NAME", "isat_recruiter")
-        user = os.getenv("DB_USER", "postgres")  # Default for shared/local setup
-        password = os.getenv("DB_PASSWORD", "")    # Default for shared/local setup
-        
+        kwargs = _db_connect_kwargs()
+        using_remote_url = "dsn" in kwargs
+
         try:
-            # Try to connect to the target database
-            self.conn = psycopg2.connect(
-                host=host,
-                port=port,
-                database=database,
-                user=user,
-                password=password
-            )
+            self.conn = _connect_from_kwargs(kwargs)
         except psycopg2.Error as e:
-            # If database doesn't exist, create it
+            if using_remote_url:
+                print(f"Error connecting to database: {e}")
+                raise
+
+            host = kwargs["host"]
+            port = kwargs["port"]
+            database = kwargs["database"]
+            user = kwargs["user"]
+            password = kwargs["password"]
+
+            # If database doesn't exist, create it (local dev only).
             error_msg = str(e).lower()
             if "does not exist" in error_msg or "database" in error_msg:
                 try:
-                    # Connect to default 'postgres' database to create the target database
                     admin_conn = psycopg2.connect(
                         host=host,
                         port=port,
-                        database="postgres",  # Connect to default database
+                        database="postgres",
                         user=user,
-                        password=password
+                        password=password,
                     )
-                    admin_conn.autocommit = True  # Required for CREATE DATABASE
+                    admin_conn.autocommit = True
                     cursor = admin_conn.cursor()
-                    
-                    # Check if database exists, create if it doesn't
-                    # Use parameterized query for safety (though database name is from env var)
+
                     cursor.execute("SELECT 1 FROM pg_database WHERE datname = %s", (database,))
                     if not cursor.fetchone():
-                        # CREATE DATABASE doesn't support parameters, but we validate the name
-                        # Only allow alphanumeric, underscore, and hyphen for safety
                         if not all(c.isalnum() or c in ('_', '-') for c in database):
                             raise ValueError(f"Invalid database name: {database}")
                         cursor.execute(f'CREATE DATABASE "{database}"')
                         print(f"Created database '{database}'")
-                    
+
                     cursor.close()
                     admin_conn.close()
-                    
-                    # Now connect to the newly created database
+
                     self.conn = psycopg2.connect(
                         host=host,
                         port=port,
                         database=database,
                         user=user,
-                        password=password
+                        password=password,
                     )
                 except psycopg2.Error as create_error:
                     print(f"Error creating database: {create_error}")
