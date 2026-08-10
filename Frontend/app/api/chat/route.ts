@@ -23,11 +23,13 @@ async function callRemoteBackend(
 
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(
+    const message =
       typeof payload.error === 'string'
         ? payload.error
-        : `Backend request failed (${response.status})`
-    );
+        : typeof payload.detail === 'string'
+          ? payload.detail
+          : `Backend request failed (${response.status})`;
+    throw new Error(message);
   }
 
   return payload as { answer: string; conversation_history: Array<{ role: string; content: string }> };

@@ -18,7 +18,7 @@ from dotenv import load_dotenv
 
 load_dotenv(ROOT / ".env")
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
@@ -49,8 +49,11 @@ def health() -> dict[str, str]:
 
 @app.post("/chat", response_model=ChatResponse)
 def chat(body: ChatRequest) -> ChatResponse:
-    # Import lazily so /health is ready quickly during Railway deploy checks.
-    from LangGraph.main import process_question
+    try:
+        # Import lazily so /health is ready quickly during Railway deploy checks.
+        from LangGraph.main import process_question
 
-    answer, history = process_question(body.question, body.conversation_history)
-    return ChatResponse(answer=answer, conversation_history=history)
+        answer, history = process_question(body.question, body.conversation_history)
+        return ChatResponse(answer=answer, conversation_history=history)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
