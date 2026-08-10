@@ -22,8 +22,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from LangGraph.main import process_question
-
 app = FastAPI(title="ISAT Recruiter API")
 app.add_middleware(
     CORSMiddleware,
@@ -51,5 +49,8 @@ def health() -> dict[str, str]:
 
 @app.post("/chat", response_model=ChatResponse)
 def chat(body: ChatRequest) -> ChatResponse:
+    # Import lazily so /health is ready quickly during Railway deploy checks.
+    from LangGraph.main import process_question
+
     answer, history = process_question(body.question, body.conversation_history)
     return ChatResponse(answer=answer, conversation_history=history)
