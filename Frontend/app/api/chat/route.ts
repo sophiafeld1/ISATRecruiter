@@ -3,64 +3,71 @@ import { spawn } from 'child_process';
 import path from 'path';
 import { existsSync } from 'fs';
 
-export async function POST(request: NextRequest) {
-  try {
-    const { question, conversation_history } = await request.json();
+async function callRemoteBackend(
+  question: string,
+  history: Array<{ role: string; content: string }>
+) {
+  const backendUrl = (process.env.BACKEND_URL || process.env.PYTHON_BACKEND_URL || '').replace(
+    /\/$/,
+    ''
+  );
+  if (!backendUrl) {
+    return null;
+  }
 
-    if (!question || typeof question !== 'string') {
-      return NextResponse.json(
-        { error: 'Question is required' },
-        { status: 400 }
-      );
+  const response = await fetch(`${backendUrl}/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ question, conversation_history: history }),
+  });
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(
+      typeof payload.error === 'string'
+        ? payload.error
+        : `Backend request failed (${response.status})`
+    );
+  }
+
+  return payload as { answer: string; conversation_history: Array<{ role: string; content: string }> };
+}
+
+async function callLocalPython(
+  question: string,
+  history: Array<{ role: string; content: string }>
+) {
+  const projectRoot = path.resolve(process.cwd(), '..');
+
+  const findPython = () => {
+    const venvNames = ['ISATRecruiter', 'venv', '.venv', 'env'];
+    for (const name of venvNames) {
+      const venvPython = path.join(projectRoot, name, 'bin', 'python');
+      if (existsSync(venvPython)) {
+        return venvPython;
+      }
     }
 
-    // Validate conversation_history if provided
-    const history = conversation_history || [];
-    if (!Array.isArray(history)) {
-      return NextResponse.json(
-        { error: 'conversation_history must be an array' },
-        { status: 400 }
-      );
+    const virtualEnv = process.env.VIRTUAL_ENV;
+    if (virtualEnv) {
+      const venvPython = path.join(virtualEnv, 'bin', 'python');
+      if (existsSync(venvPython)) return venvPython;
     }
+    return 'python3';
+  };
+  const pythonExecutable = findPython();
 
-    // Get project root (one level up from Frontend)
-    const projectRoot = path.resolve(process.cwd(), '..');
-
-    // Resolve Python executable in a robust order:
-    // 1) Project-local venv names in project root (preferred for reproducibility)
-    // 2) Active shell venv (VIRTUAL_ENV)
-    // 3) System python3
-    const findPython = () => {
-      const venvNames = ['ISATRecruiter', 'venv', '.venv', 'env'];
-      for (const name of venvNames) {
-        const venvPython = path.join(projectRoot, name, 'bin', 'python');
-        if (existsSync(venvPython)) {
-          return venvPython;
-        }
-      }
-
-      const virtualEnv = process.env.VIRTUAL_ENV;
-      if (virtualEnv) {
-        const venvPython = path.join(virtualEnv, 'bin', 'python');
-        if (existsSync(venvPython)) return venvPython;
-      }
-      return 'python3';
-    };
-    const pythonExecutable = findPython();
-
-    // Call Python function
-    const result = await new Promise<{answer: string, conversation_history: any[]}>((resolve, reject) => {
+  return new Promise<{ answer: string; conversation_history: Array<{ role: string; content: string }> }>(
+    (resolve, reject) => {
       const pythonCode = `
 import sys
 import os
 import json
 
-# Add project root to path
 project_root = r'${projectRoot.replace(/\\/g, '/')}'
 sys.path.insert(0, project_root)
 os.chdir(project_root)
 
-# Import and call function
 from LangGraph.main import process_question
 question = json.loads(${JSON.stringify(JSON.stringify(question))})
 conversation_history = json.loads(${JSON.stringify(JSON.stringify(history))})
@@ -71,7 +78,7 @@ print(result, end='', flush=True)
 
       const pythonProcess = spawn(pythonExecutable, ['-c', pythonCode], {
         cwd: projectRoot,
-        env: { ...process.env, PYTHONUNBUFFERED: '1' }
+        env: { ...process.env, PYTHONUNBUFFERED: '1' },
       });
 
       let output = '';
@@ -84,38 +91,55 @@ print(result, end='', flush=True)
       pythonProcess.stderr.on('data', (data) => {
         const stderrData = data.toString();
         errorOutput += stderrData;
-        // Log stderr to console (for chunk retrieval debug output)
         console.error(stderrData);
       });
 
       pythonProcess.on('close', (code) => {
         if (code !== 0) {
           reject(new Error(errorOutput || `Process exited with code ${code}`));
-        } else {
-          try {
-            const parsed = JSON.parse(output.trim());
-            resolve(parsed);
-          } catch (e) {
-            // Fallback for backward compatibility
-            resolve({ answer: output.trim(), conversation_history: [] });
-          }
+          return;
+        }
+
+        try {
+          resolve(JSON.parse(output.trim()));
+        } catch {
+          resolve({ answer: output.trim(), conversation_history: [] });
         }
       });
 
       pythonProcess.on('error', (error) => {
         reject(new Error(`Failed to start Python: ${error.message}`));
       });
-    });
-
-    return NextResponse.json({ 
-      answer: result.answer, 
-      conversation_history: result.conversation_history 
-    });
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: error.message || 'Failed to process question' },
-      { status: 500 }
-    );
-  }
+    }
+  );
 }
 
+export async function POST(request: NextRequest) {
+  try {
+    const { question, conversation_history } = await request.json();
+
+    if (!question || typeof question !== 'string') {
+      return NextResponse.json({ error: 'Question is required' }, { status: 400 });
+    }
+
+    const history = conversation_history || [];
+    if (!Array.isArray(history)) {
+      return NextResponse.json(
+        { error: 'conversation_history must be an array' },
+        { status: 400 }
+      );
+    }
+
+    const result =
+      (await callRemoteBackend(question, history)) ??
+      (await callLocalPython(question, history));
+
+    return NextResponse.json({
+      answer: result.answer,
+      conversation_history: result.conversation_history,
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to process question';
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
