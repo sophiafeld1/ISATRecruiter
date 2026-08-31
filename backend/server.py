@@ -110,6 +110,9 @@ def diagnostics() -> dict:
 
     try:
         conn = _connect_from_kwargs(db_kwargs)
+        with conn.cursor() as cur:
+            cur.execute("SELECT COUNT(*) FROM chunks WHERE embedding IS NOT NULL")
+            result["chunks_with_embeddings"] = cur.fetchone()[0]
         conn.close()
         result["database_test"] = "ok"
     except Exception as exc:
