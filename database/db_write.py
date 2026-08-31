@@ -2,10 +2,13 @@ import os
 import json
 import re
 import sys
+import logging
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from typing import List
 from dotenv import load_dotenv
+
+logger = logging.getLogger(__name__)
 
 # Load .env file from project root (two levels up from database/)
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -83,10 +86,19 @@ class LinkDatabase:
     def connect(self):
         kwargs = _db_connect_kwargs()
         using_remote_url = "dsn" in kwargs
+        mode = "dsn" if using_remote_url else "pghost" if os.getenv("PGHOST") else "db_host"
+        logger.info(
+            "db.connect: mode=%s host=%s database=%s",
+            mode,
+            kwargs.get("host") or "(from dsn)",
+            kwargs.get("database") or "(from dsn)",
+        )
 
         try:
             self.conn = _connect_from_kwargs(kwargs)
+            logger.info("db.connect: ok")
         except psycopg2.Error as e:
+            logger.exception("db.connect: failed mode=%s", mode)
             if using_remote_url:
                 print(f"Error connecting to database: {e}")
                 raise

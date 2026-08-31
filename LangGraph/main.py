@@ -7,11 +7,15 @@ Flow:
 3. If off-topic: Answer without RAG
 4. If on-topic: RAG → Pull chunks → Find similar chunks → Answer with relevant info in advisor style language
 """
+import logging
 import os
 import re
 import sys
+import time
 from typing import TypedDict, Literal
 from dotenv import load_dotenv
+
+logger = logging.getLogger(__name__)
 
 # Add project root to path
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -41,6 +45,11 @@ def _get_client() -> OpenAI:
     global _client
     if _client is None:
         key = _openai_api_key()
+        logger.info(
+            "OpenAI chat client init: key_set=%s key_len=%d",
+            bool(key),
+            len(key),
+        )
         _client = OpenAI(api_key=key) if key else OpenAI()
     return _client
 
@@ -49,6 +58,11 @@ def _get_embeddings_model() -> OpenAIEmbeddings:
     global _embeddings_model
     if _embeddings_model is None:
         key = _openai_api_key()
+        logger.info(
+            "OpenAI embeddings init: key_set=%s key_len=%d model=text-embedding-3-small",
+            bool(key),
+            len(key),
+        )
         _embeddings_model = OpenAIEmbeddings(
             model="text-embedding-3-small",
             openai_api_key=key or None,
@@ -327,9 +341,15 @@ def classify_question(state: GraphState) -> GraphState:
     """
     question = state["question"]
     conversation_history = state.get("conversation_history", [])
+    logger.info(
+        "classify: start question=%r history_len=%d",
+        question[:120],
+        len(conversation_history),
+    )
 
     # Hard-route schedule generation and active intake context through schedule tool flow.
     if _is_schedule_context(question, conversation_history):
+        logger.info("classify: schedule context detected, routing to RAG path")
         return {
             **state,
             "requires_rag": True
@@ -355,16 +375,27 @@ Respond with ONLY "rag" if the question requires RAG (on-topic), or "generic" if
     
     # Add current question
     messages.append({"role": "user", "content": f"Question: {question}"})
-    
-    response = _get_client().chat.completions.create(
-        model="gpt-4o-mini",
-        messages=messages,
-        temperature=0
-    )
-    
+
+    try:
+        t0 = time.monotonic()
+        response = _get_client().chat.completions.create(
+            model="gpt-4o-mini",
+            messages=messages,
+            temperature=0,
+        )
+        logger.info("classify: OpenAI chat ok in %.2fs", time.monotonic() - t0)
+    except Exception:
+        logger.exception("classify: OpenAI chat failed")
+        raise
+
     classification = response.choices[0].message.content.strip().lower()
     requires_rag = "rag" in classification
-    
+    logger.info(
+        "classify: done requires_rag=%s raw_classification=%r",
+        requires_rag,
+        classification,
+    )
+
     return {
         **state,
         "requires_rag": requires_rag
@@ -376,25 +407,38 @@ def retrieve_chunks(state: GraphState) -> GraphState:
     Retrieve relevant chunks from the database using RAG.
     """
     question = state["question"]
+    logger.info("retrieve: start question=%r", question[:120])
     if _is_schedule_context(question, state.get("conversation_history", [])):
+        logger.info("retrieve: schedule context, skipping chunk lookup")
         return {**state, "chunks": []}
     top_k = 8
     retrieval_text = _expand_retrieval_query(question)
-    query_embedding = _get_embeddings_model().embed_query(retrieval_text)
-    
+    try:
+        t0 = time.monotonic()
+        query_embedding = _get_embeddings_model().embed_query(retrieval_text)
+        logger.info(
+            "retrieve: embedding ok in %.2fs dim=%d query_len=%d",
+            time.monotonic() - t0,
+            len(query_embedding),
+            len(retrieval_text),
+        )
+    except Exception:
+        logger.exception("retrieve: embedding failed")
+        raise
+
     db = LinkDatabase()
     try:
         direct: list[dict] = []
         code = _explicit_isat_course_code(question)
         if code:
+            logger.info("retrieve: explicit course code=%r", code)
             direct = db.find_chunks_for_course_code(code, limit=top_k)
             if len(direct) < top_k:
                 mention = db.find_chunks_mentioning_course_code(code, limit=top_k)
                 direct = _merge_chunks_by_id(direct, mention, top_k)
             if not direct:
-                print(
-                    f"No DB chunks for course code {code!r} (add course or fix course_code).",
-                    file=sys.stderr,
+                logger.warning(
+                    "retrieve: no DB chunks for course code %r", code,
                 )
         # Pull more candidates for code-specific questions, then lexically prioritize.
         vector_k = 24 if code else top_k
@@ -404,15 +448,20 @@ def retrieve_chunks(state: GraphState) -> GraphState:
             chunks = _prioritize_course_mentions(merged, code, top_k)
         else:
             chunks = merged[:top_k]
+        logger.info(
+            "retrieve: direct=%d vector=%d merged=%d final=%d top_similarity=%s",
+            len(direct),
+            len(vector_chunks),
+            len(merged),
+            len(chunks),
+            f"{chunks[0].get('similarity', 0):.4f}" if chunks else "n/a",
+        )
+    except Exception:
+        logger.exception("retrieve: database query failed")
+        raise
     finally:
         db.close()
-    
-    # Print retrieved chunks to terminal (stderr so it doesn't go to API response)
-    print(f"\n{'='*80}", file=sys.stderr)
-    print(f"RETRIEVED CHUNKS FOR QUESTION: {question}", file=sys.stderr)
-    print(f"{'='*80}", file=sys.stderr)
-    print(f"Total chunks retrieved: {len(chunks)}\n", file=sys.stderr)
-    
+
     for i, chunk in enumerate(chunks, 1):
         chunk_id = chunk.get("chunk_id")
         chunk_text = chunk.get("chunk_text", "")
@@ -420,28 +469,16 @@ def retrieve_chunks(state: GraphState) -> GraphState:
         course_id = chunk.get("course_id")
         page_id = chunk.get("page_id")
         similarity = chunk.get("similarity", 0)
-        
-        print(f"--- Chunk {i} (ID: {chunk_id}) ---", file=sys.stderr)
-        print(f"Similarity Score: {similarity:.4f}", file=sys.stderr)
-        
-        if course_name:
-            course_code = chunk.get("course_code", "")
-            if course_code:
-                print(f"Source: Course - {course_name} ({course_code})", file=sys.stderr)
-            else:
-                print(f"Source: Course - {course_name} (ID: {course_id})", file=sys.stderr)
-        elif page_id:
-            print(f"Source: Page (Page ID: {page_id})", file=sys.stderr)
-        else:
-            print(f"Source: Unknown", file=sys.stderr)
-        
-        # Print chunk text (first 300 chars)
-        preview = chunk_text[:300] + "..." if len(chunk_text) > 300 else chunk_text
-        print(f"Content: {preview}", file=sys.stderr)
-        print(file=sys.stderr)
-    
-    print(f"{'='*80}\n", file=sys.stderr)
-    
+        preview = chunk_text[:120] + "..." if len(chunk_text) > 120 else chunk_text
+        logger.info(
+            "retrieve: chunk[%d] id=%s similarity=%.4f source=%s preview=%r",
+            i,
+            chunk_id,
+            similarity,
+            f"course:{course_name}" if course_name else f"page:{page_id}" if page_id else "unknown",
+            preview,
+        )
+
     return {
         **state,
         "chunks": chunks
@@ -455,14 +492,16 @@ def answer_with_rag(state: GraphState) -> GraphState:
     question = state["question"]
     chunks = state.get("chunks", [])
     conversation_history = state.get("conversation_history", [])
+    logger.info("answer_rag: start chunks=%d", len(chunks or []))
     if _is_schedule_context(question, conversation_history):
+        logger.info("answer_rag: schedule intake path")
         return {
             **state,
             "answer": _handle_schedule_intake(question, conversation_history),
         }
-    
+
     if not chunks:
-        print("\nNo chunks found in database!", file=sys.stderr)
+        logger.warning("answer_rag: no chunks found, returning fallback message")
         answer = "I'm sorry, I don't have that information yet. We are working to add more information to the knowledge base. Please rephrase or ask another question relating to ISAT!"
         return {
             **state,
@@ -541,14 +580,25 @@ Context (excerpts):
     
     # Add current question
     messages.append({"role": "user", "content": question})
-    
-    response = _get_client().chat.completions.create(
-        model="gpt-4o-mini",
-        messages=messages,
-        temperature=0.22,
-    )
+
+    try:
+        t0 = time.monotonic()
+        response = _get_client().chat.completions.create(
+            model="gpt-4o-mini",
+            messages=messages,
+            temperature=0.22,
+        )
+        logger.info(
+            "answer_rag: OpenAI chat ok in %.2fs context_chars=%d",
+            time.monotonic() - t0,
+            len(context),
+        )
+    except Exception:
+        logger.exception("answer_rag: OpenAI chat failed")
+        raise
 
     answer = response.choices[0].message.content
+    logger.info("answer_rag: done answer_len=%d", len(answer or ""))
 
     return {
         **state,
@@ -562,6 +612,7 @@ def answer_generic(state: GraphState) -> GraphState:
     """
     question = state["question"]
     conversation_history = state.get("conversation_history", [])
+    logger.info("answer_generic: start question=%r", question[:120])
     
     system_message = """You are a friendly assistant for the ISAT program. 
 The user has asked an off-topic question that doesn't require specific ISAT or JMU knowledge.
@@ -578,15 +629,22 @@ You can reference previous questions and answers in the conversation if relevant
     
     # Add current question
     messages.append({"role": "user", "content": question})
-    
-    response = _get_client().chat.completions.create(
-        model="gpt-4o-mini",
-        messages=messages,
-        temperature=0.7
-    )
-    
+
+    try:
+        t0 = time.monotonic()
+        response = _get_client().chat.completions.create(
+            model="gpt-4o-mini",
+            messages=messages,
+            temperature=0.7,
+        )
+        logger.info("answer_generic: OpenAI chat ok in %.2fs", time.monotonic() - t0)
+    except Exception:
+        logger.exception("answer_generic: OpenAI chat failed")
+        raise
+
     answer = response.choices[0].message.content
-    
+    logger.info("answer_generic: done answer_len=%d", len(answer or ""))
+
     return {
         **state,
         "answer": answer
@@ -597,9 +655,9 @@ def should_use_rag(state: GraphState) -> Literal["rag", "generic"]:
     """
     Routing function: decide whether to use RAG or generic response.
     """
-    if state.get("requires_rag"):
-        return "rag"
-    return "generic"
+    route: Literal["rag", "generic"] = "rag" if state.get("requires_rag") else "generic"
+    logger.info("route: %s (requires_rag=%s)", route, state.get("requires_rag"))
+    return route
 
 
 # Build the graph
@@ -653,7 +711,14 @@ def process_question(question: str, conversation_history: list[dict] | None = No
     """
     if conversation_history is None:
         conversation_history = []
-    
+
+    logger.info(
+        "process_question: start question=%r history_len=%d",
+        question[:120],
+        len(conversation_history),
+    )
+    t0 = time.monotonic()
+
     initial_state = {
         "question": question,
         "requires_rag": None,
@@ -661,9 +726,24 @@ def process_question(question: str, conversation_history: list[dict] | None = No
         "answer": None,
         "conversation_history": conversation_history
     }
-    
-    result = graph.invoke(initial_state)
+
+    try:
+        result = graph.invoke(initial_state)
+    except Exception:
+        logger.exception(
+            "process_question: graph failed after %.2fs",
+            time.monotonic() - t0,
+        )
+        raise
+
     answer = result.get("answer", "I'm sorry, I couldn't generate a response.")
+    logger.info(
+        "process_question: done in %.2fs requires_rag=%s chunks=%s answer_len=%d",
+        time.monotonic() - t0,
+        result.get("requires_rag"),
+        len(result.get("chunks") or []),
+        len(answer or ""),
+    )
     
     # Update conversation history with new Q&A pair
     updated_history = conversation_history + [
