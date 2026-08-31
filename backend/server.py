@@ -55,8 +55,11 @@ def health() -> dict[str, str]:
 @app.get("/diagnostics")
 def diagnostics() -> dict:
     """Check runtime config on Railway without exposing secrets."""
+    from database.db_write import _connect_from_kwargs, _db_connect_kwargs
+
     openai_key = (os.getenv("OPENAI_API_KEY") or "").strip()
     database_url = (os.getenv("DATABASE_URL") or "").strip()
+    db_kwargs = _db_connect_kwargs()
 
     result: dict = {
         "openai_key_set": bool(openai_key),
@@ -64,6 +67,12 @@ def diagnostics() -> dict:
         "openai_key_prefix_ok": openai_key.startswith("sk-"),
         "database_url_set": bool(database_url),
         "database_url_has_placeholders": "${{" in database_url,
+        "pghost_set": bool(os.getenv("PGHOST")),
+        "database_connection_mode": "dsn"
+        if "dsn" in db_kwargs
+        else "pghost"
+        if os.getenv("PGHOST")
+        else "db_host",
         "openai_test": None,
         "database_test": None,
     }
@@ -80,17 +89,15 @@ def diagnostics() -> dict:
     else:
         result["openai_test"] = "skipped (OPENAI_API_KEY not set)"
 
-    if database_url and "${{" not in database_url:
-        try:
-            import psycopg2
-
-            conn = psycopg2.connect(database_url)
-            conn.close()
-            result["database_test"] = "ok"
-        except Exception as exc:
+    try:
+        conn = _connect_from_kwargs(db_kwargs)
+        conn.close()
+        result["database_test"] = "ok"
+    except Exception as exc:
+        if database_url or os.getenv("PGHOST") or os.getenv("DB_HOST"):
             result["database_test"] = f"{type(exc).__name__}: {exc}"
-    else:
-        result["database_test"] = "skipped (DATABASE_URL missing or unresolved)"
+        else:
+            result["database_test"] = "skipped (no database env vars set on this service)"
 
     return result
 
