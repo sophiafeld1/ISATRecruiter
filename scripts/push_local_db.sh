@@ -65,7 +65,7 @@ else
 fi
 echo "Connected."
 
-echo "Dumping local database '${LOCAL_DB_NAME}'..."
+echo "Dumping local database '${LOCAL_DB_NAME}' (clean replace on Railway)..."
 if [[ "$PSQL_TARGET" == "flags" ]]; then
   pg_dump \
     --host="$LOCAL_DB_HOST" \
@@ -74,6 +74,8 @@ if [[ "$PSQL_TARGET" == "flags" ]]; then
     --format=plain \
     --no-owner \
     --no-acl \
+    --clean \
+    --if-exists \
     "$LOCAL_DB_NAME" \
   | psql
 else
@@ -84,6 +86,8 @@ else
     --format=plain \
     --no-owner \
     --no-acl \
+    --clean \
+    --if-exists \
     "$LOCAL_DB_NAME" \
   | psql "$PSQL_TARGET"
 fi
