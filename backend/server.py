@@ -118,6 +118,15 @@ def diagnostics() -> dict:
         else:
             result["database_test"] = "skipped (no database env vars set on this service)"
 
+    try:
+        from LangGraph.main import process_question
+
+        answer, _ = process_question("What is ISAT?", [])
+        result["chat_smoke_test"] = "ok"
+        result["chat_smoke_answer_len"] = len(answer or "")
+    except Exception as exc:
+        result["chat_smoke_test"] = f"{type(exc).__name__}: {exc}"
+
     return result
 
 
@@ -131,4 +140,5 @@ def chat(body: ChatRequest) -> ChatResponse:
         return ChatResponse(answer=answer, conversation_history=history)
     except Exception as exc:
         logger.error("Chat request failed:\n%s", traceback.format_exc())
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
+        detail = f"{type(exc).__name__}: {exc}"
+        raise HTTPException(status_code=500, detail=detail) from exc

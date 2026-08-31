@@ -28,13 +28,34 @@ from planner.schedule_render import format_schedule_message
 # Load .env file from project root
 load_dotenv(dotenv_path=os.path.join(project_root, '.env'))
 
-# Initialize clients
-_openai_api_key = os.getenv("OPENAI_API_KEY")
-client = OpenAI(api_key=_openai_api_key) if _openai_api_key else OpenAI()
-embeddings_model = OpenAIEmbeddings(
-    model="text-embedding-3-small",
-    openai_api_key=_openai_api_key,
-)
+# Lazy OpenAI clients — created on first use so Railway env vars are always loaded.
+_client: OpenAI | None = None
+_embeddings_model: OpenAIEmbeddings | None = None
+
+
+def _openai_api_key() -> str:
+    return (os.getenv("OPENAI_API_KEY") or "").strip()
+
+
+def _get_client() -> OpenAI:
+    global _client
+    if _client is None:
+        key = _openai_api_key()
+        _client = OpenAI(api_key=key) if key else OpenAI()
+    return _client
+
+
+def _get_embeddings_model() -> OpenAIEmbeddings:
+    global _embeddings_model
+    if _embeddings_model is None:
+        key = _openai_api_key()
+        _embeddings_model = OpenAIEmbeddings(
+            model="text-embedding-3-small",
+            openai_api_key=key or None,
+        )
+    return _embeddings_model
+
+
 scheduler_tool = CourseScheduler(project_root=project_root)
 
 _ISAT_COURSE_RE = re.compile(r"\bisat\s*(\d{3})\b", re.IGNORECASE)
@@ -335,7 +356,7 @@ Respond with ONLY "rag" if the question requires RAG (on-topic), or "generic" if
     # Add current question
     messages.append({"role": "user", "content": f"Question: {question}"})
     
-    response = client.chat.completions.create(
+    response = _get_client().chat.completions.create(
         model="gpt-4o-mini",
         messages=messages,
         temperature=0
@@ -359,7 +380,7 @@ def retrieve_chunks(state: GraphState) -> GraphState:
         return {**state, "chunks": []}
     top_k = 8
     retrieval_text = _expand_retrieval_query(question)
-    query_embedding = embeddings_model.embed_query(retrieval_text)
+    query_embedding = _get_embeddings_model().embed_query(retrieval_text)
     
     db = LinkDatabase()
     try:
@@ -521,7 +542,7 @@ Context (excerpts):
     # Add current question
     messages.append({"role": "user", "content": question})
     
-    response = client.chat.completions.create(
+    response = _get_client().chat.completions.create(
         model="gpt-4o-mini",
         messages=messages,
         temperature=0.22,
@@ -558,7 +579,7 @@ You can reference previous questions and answers in the conversation if relevant
     # Add current question
     messages.append({"role": "user", "content": question})
     
-    response = client.chat.completions.create(
+    response = _get_client().chat.completions.create(
         model="gpt-4o-mini",
         messages=messages,
         temperature=0.7
