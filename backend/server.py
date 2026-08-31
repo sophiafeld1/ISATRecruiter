@@ -84,10 +84,29 @@ def diagnostics() -> dict:
             client = OpenAI(api_key=openai_key)
             client.models.list()
             result["openai_test"] = "ok"
+            client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[{"role": "user", "content": "Say ok"}],
+                max_tokens=5,
+            )
+            result["openai_chat_test"] = "ok"
+            from langchain_openai import OpenAIEmbeddings
+
+            embeddings = OpenAIEmbeddings(
+                model="text-embedding-3-small",
+                openai_api_key=openai_key,
+            )
+            embeddings.embed_query("test")
+            result["openai_embed_test"] = "ok"
         except Exception as exc:
-            result["openai_test"] = f"{type(exc).__name__}: {exc}"
+            if result["openai_test"] == "ok":
+                result["openai_chat_test"] = f"{type(exc).__name__}: {exc}"
+                result["openai_test"] = f"models ok, chat failed: {type(exc).__name__}: {exc}"
+            else:
+                result["openai_test"] = f"{type(exc).__name__}: {exc}"
     else:
         result["openai_test"] = "skipped (OPENAI_API_KEY not set)"
+        result["openai_chat_test"] = "skipped (OPENAI_API_KEY not set)"
 
     try:
         conn = _connect_from_kwargs(db_kwargs)

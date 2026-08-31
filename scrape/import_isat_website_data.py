@@ -1,9 +1,17 @@
 """
 Import local ISAT website markdown data into Postgres.
 
-- Each top-level H1 section (`# Heading`) becomes one row in `pages`.
-- Links from `data_isat_website/links.txt` are inserted into `urls`
-  as (description, url).
+- Every `*.md` under `data_isat_website/` is read. Each top-level `# Heading`
+  becomes one `pages` row (`local://data_isat_website/<file>#...`).
+- Files with no `# ` heading are stored as a single page named from the filename.
+- `links.txt` pairs (description line + URL line) go into `urls`.
+- After import, chunks for those local pages are deleted so you can re-run
+  page chunking + embeddings and pick up new text.
+
+Run from repo root:
+  python scrape/import_isat_website_data.py
+  python chunking/chunk_base.py pages
+  python chunking/embeddings.py   # if your pipeline embeds page chunks
 """
 import os
 import re
@@ -52,12 +60,15 @@ def import_markdown_sections(db: LinkDatabase):
         with open(path, encoding="utf-8") as f:
             text = f.read()
         sections = _split_by_h1(text)
+        if not sections and text.strip():
+            base_title = os.path.splitext(fn)[0].replace("_", " ").strip() or "Document"
+            sections = [(base_title, text.strip())]
         for idx, (title, body) in enumerate(sections, start=1):
             section_text = f"# {title}\n\n{body}".strip()
             page_url = f"local://data_isat_website/{fn}#{idx}-{_slugify(title)}"
             db.upsert_page(url=page_url, text=section_text, links=None)
             total += 1
-    print(f"Imported {total} H1 sections into pages.")
+    print(f"Imported {total} markdown sections into pages (from {len(md_files)} files).")
 
 
 def import_links(db: LinkDatabase):
@@ -83,11 +94,22 @@ def import_links(db: LinkDatabase):
     print(f"Imported {total} links into urls.")
 
 
+def refresh_chunks_for_imported_pages(db: LinkDatabase) -> int:
+    """
+    Remove stale chunks so chunking/embeddings can be regenerated from updated page text.
+    """
+    n = db.delete_chunks_for_pages_url_like("local://data_isat_website/%")
+    print(f"Deleted {n} chunk(s) for local data_isat_website pages.")
+    print("Next: python chunking/chunk_base.py pages  # then run your embedding job for page chunks")
+    return n
+
+
 def main():
     db = LinkDatabase()
     try:
         import_markdown_sections(db)
         import_links(db)
+        refresh_chunks_for_imported_pages(db)
     finally:
         db.close()
 

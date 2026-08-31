@@ -1,10 +1,15 @@
 """
 ISAT RAG chat — Streamlit UI.
 
-Local:   streamlit run streamlit_app.py
-Deploy: https://share.streamlit.io — set Main file to streamlit_app.py, add secrets
-        (OPENAI_API_KEY, DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD) for a
-        reachable Postgres instance (e.g. Neon, Supabase).
+Config:
+- **Local:** put `OPENAI_API_KEY`, `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, and
+  `DB_PASSWORD` in a `.env` file at the repo root (same as the rest of the project).
+  `load_dotenv` runs before anything else needs them.
+- **Streamlit Cloud:** add the same keys under **App settings → Secrets** (flat TOML
+  is fine, e.g. `OPENAI_API_KEY = "sk-..."`). Those values override a `.env` in the
+  repo if you accidentally committed placeholders.
+
+Run: `streamlit run streamlit_app.py`
 """
 from __future__ import annotations
 
@@ -30,9 +35,16 @@ st.set_page_config(
 _secrets: dict[str, str] = {}
 try:
     for _k in st.secrets:
-        _secrets[str(_k)] = str(st.secrets[_k])
+        val = st.secrets[_k]
+        if isinstance(val, dict):
+            continue
+        _secrets[str(_k)] = str(val)
 except Exception:
     pass
+
+# Streamlit Cloud: secrets from the dashboard must win over any `.env` shipped in the
+# repo (placeholders). Locally, `.streamlit/secrets.toml` is usually absent — then only
+# `load_dotenv` applies.
 for _key in (
     "OPENAI_API_KEY",
     "DB_HOST",
@@ -42,7 +54,22 @@ for _key in (
     "DB_PASSWORD",
 ):
     if _key in _secrets:
-        os.environ[_key] = str(_secrets[_key])
+        os.environ[_key] = _secrets[_key]
+
+# Tutorial-style nested TOML: [openai]\napi_key = "sk-..."
+try:
+    _openai = st.secrets.get("openai")
+    if isinstance(_openai, dict) and _openai.get("api_key"):
+        os.environ["OPENAI_API_KEY"] = str(_openai["api_key"])
+except Exception:
+    pass
+
+if not (os.environ.get("OPENAI_API_KEY") or "").strip():
+    st.error(
+        "Missing **OPENAI_API_KEY**. Add it to Streamlit **App settings → Secrets** "
+        "as `OPENAI_API_KEY = \"sk-...\"`, or use a `.env` file when running locally."
+    )
+    st.stop()
 
 from LangGraph.main import process_question
 

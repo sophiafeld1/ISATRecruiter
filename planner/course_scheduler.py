@@ -178,6 +178,70 @@ def _ensure_min_two_isat_per_semester(
             break
 
 
+def _course_is_prereq_in_range(
+    course_code: str,
+    semesters: list[Semester],
+    start_exclusive: int,
+    end_inclusive: int,
+) -> bool:
+    target = normalize_course_code(course_code)
+    for idx in range(start_exclusive + 1, min(end_inclusive, len(semesters) - 1) + 1):
+        for c in semesters[idx]["courses"]:
+            prereqs = c.get("prereqs") or []
+            if any(normalize_course_code(p) == target for p in prereqs):
+                return True
+    return False
+
+
+def _rebalance_upper_year_credit_floor(
+    semesters: list[Semester],
+    term_credit_caps: list[int],
+    min_index_fn,
+    floor: int = 12,
+    start_semester: int = 4,
+) -> None:
+    """
+    Raise thin upper-year semesters by moving movable courses from heavier prior terms.
+    Keep capstones fixed and preserve prerequisite ordering.
+    """
+    for _ in range(120):
+        thin = [
+            i for i in range(start_semester, len(semesters))
+            if semesters[i]["total_credits"] < floor
+        ]
+        if not thin:
+            return
+        moved_any = False
+        for i in thin:
+            for j in range(i - 1, start_semester - 1, -1):
+                if semesters[j]["total_credits"] <= floor:
+                    continue
+                for ei in range(len(semesters[j]["courses"]) - 1, -1, -1):
+                    c = semesters[j]["courses"][ei]
+                    code = normalize_course_code(c["code"])
+                    if code in CAPSTONE_CODES:
+                        continue
+                    if min_index_fn(code) > i:
+                        continue
+                    if semesters[i]["total_credits"] + c["credits"] > term_credit_caps[i]:
+                        continue
+                    # If this course is needed as a prereq by any course before its new term, don't move it later.
+                    if _course_is_prereq_in_range(code, semesters, j, i):
+                        continue
+                    semesters[j]["courses"].pop(ei)
+                    semesters[j]["total_credits"] -= c["credits"]
+                    semesters[i]["courses"].append(c)
+                    semesters[i]["total_credits"] += c["credits"]
+                    moved_any = True
+                    break
+                if moved_any:
+                    break
+            if moved_any:
+                break
+        if not moved_any:
+            break
+
+
 @lru_cache(maxsize=1)
 def _catalog_map_abet_first() -> dict[str, dict]:
     db = LinkDatabase()
@@ -423,20 +487,32 @@ class CourseScheduler:
                     rotation = (sem_idx + 1) % 4
                     break
             if not placed:
+                # Spill into upper years only when years 1-2 are full; choose the least-loaded term
+                # to avoid stacking many Gen Ed placeholders into a single semester.
+                candidates = []
                 for sem_idx in range(4, len(semesters)):
                     cap = term_credit_caps[sem_idx]
                     sem = semesters[sem_idx]
                     if sem["total_credits"] + 3 <= cap:
-                        sem["courses"].append(_gen_ed_placeholder())
-                        sem["total_credits"] += 3
-                        gen_ed_needed -= 3
-                        placed = True
-                        break
+                        candidates.append((sem["total_credits"], sem_idx))
+                if candidates:
+                    _, sem_idx = min(candidates)
+                    semesters[sem_idx]["courses"].append(_gen_ed_placeholder())
+                    semesters[sem_idx]["total_credits"] += 3
+                    gen_ed_needed -= 3
+                    placed = True
             if not placed:
                 break
 
         _rebalance_gen_ed_avoid_singles(semesters, term_credit_caps, first_two_floor)
         _ensure_min_two_isat_per_semester(semesters, term_credit_caps, min_index_for_course, first_two_floor)
+        _rebalance_upper_year_credit_floor(
+            semesters,
+            term_credit_caps,
+            min_index_for_course,
+            floor=12,
+            start_semester=4,
+        )
 
         for sem in semesters:
             sem["total_credits"] = sum(c["credits"] for c in sem["courses"])

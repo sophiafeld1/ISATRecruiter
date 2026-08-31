@@ -146,6 +146,15 @@ class TestCourseSchedulerAccuracy(unittest.TestCase):
                         msg=sem["term"],
                     )
 
+                # 7) Keep upper-year semester loads reasonable (avoid extreme 18 vs 3 swings).
+                upper_year = output["semesters"][4:8]
+                for sem in upper_year:
+                    self.assertGreaterEqual(
+                        sem["total_credits"],
+                        12,
+                        msg=f"Upper-year semester too light: {sem['term']}",
+                    )
+
     def test_abet_title_sanity_rejects_boilerplate(self) -> None:
         bad = (
             "Please use the following format for the course syllabi "
