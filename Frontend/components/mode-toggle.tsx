@@ -3,16 +3,18 @@
 import { useState, useEffect } from "react"
 import { Moon, Sun } from "lucide-react"
 
-export function ModeToggle() {
+type ModeToggleProps = {
+  labeled?: boolean
+}
+
+export function ModeToggle({ labeled = false }: ModeToggleProps) {
   const [theme, setTheme] = useState<"light" | "dark">("light")
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     setMounted(true)
-    // Check for saved theme preference or default to light
     const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches
-    
     const initialTheme = savedTheme || (prefersDark ? "dark" : "light")
     setTheme(initialTheme)
     applyTheme(initialTheme)
@@ -35,21 +37,20 @@ export function ModeToggle() {
   }
 
   if (!mounted) {
-    return null // Prevent hydration mismatch
+    return <div className={labeled ? "mode-toggle-button labeled" : "mode-toggle-button"} aria-hidden />
   }
+
+  const label = theme === "light" ? "Dark mode" : "Light mode"
 
   return (
     <button
+      type="button"
       onClick={toggleTheme}
-      className="mode-toggle-button"
-      aria-label="Toggle theme"
+      className={labeled ? "mode-toggle-button labeled" : "mode-toggle-button"}
+      aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
     >
-      {theme === "light" ? (
-        <Moon className="icon" />
-      ) : (
-        <Sun className="icon" />
-      )}
+      {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
+      {labeled ? <span>{label}</span> : null}
     </button>
   )
 }
-
