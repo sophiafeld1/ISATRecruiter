@@ -9,6 +9,7 @@ import rehypeRaw from 'rehype-raw';
 import { buildScheduleExportHtml } from '@/lib/buildScheduleExportHtml';
 import {
   ArrowUp,
+  BookOpen,
   CalendarRange,
   Download,
   GraduationCap,
@@ -41,13 +42,61 @@ const suggestedQuestions = [
     label: 'Generate a course schedule',
     hint: 'Build a four-year plan',
     icon: CalendarRange,
+    action: 'send',
   },
   {
     label: 'What is ISAT?',
     hint: 'How the program works',
     icon: GraduationCap,
+    action: 'send',
+  },
+  {
+    label: 'Ask about courses',
+    hint: 'Choose an example question',
+    icon: BookOpen,
+    action: 'examples',
   },
 ] as const;
+
+const exampleQuestions = [
+  'What courses do ISAT students take?',
+  'What are the foundation courses?',
+  'What concentrations does ISAT offer?',
+  'What is the difference between a sector and a concentration?',
+  'What is the capstone research project?',
+  'What careers can an ISAT degree lead to?',
+  'How is ISAT different from a traditional science major?',
+  'Are there scholarships for ISAT students?',
+];
+
+function isFollowUpPrompt(text: string) {
+  return /tell me more|simpler overview|more detail|explain how this plan/i.test(text);
+}
+
+function followUpsForTopic(text: string, alreadyAskedMore: boolean): string[] {
+  const lead = alreadyAskedMore
+    ? 'Can you give me a simpler overview?'
+    : 'Can you tell me more about that?';
+  const low = text.toLowerCase();
+  let options: string[];
+  if (/scholarship/.test(low)) {
+    options = [lead, 'What courses do ISAT students take?', 'What concentrations does ISAT offer?'];
+  } else if (/career|job/.test(low)) {
+    options = [lead, 'What concentrations does ISAT offer?', 'What courses would prepare me for that?'];
+  } else if (/capstone|senior project|symposium/.test(low)) {
+    options = [lead, 'What concentrations does ISAT offer?', 'What courses do students take before the capstone?'];
+  } else if (/sector|concentration/.test(low)) {
+    options = [lead, 'What is the difference between a sector and a concentration?', 'What careers can that lead to?'];
+  } else if (/course|curriculum|foundation|class/.test(low)) {
+    options = [lead, 'What are the foundation courses?', 'How do concentrations work?'];
+  } else if (/what is isat|different from|hands-on|program/.test(low)) {
+    options = [lead, 'What courses would I take?', 'What concentrations does ISAT offer?', 'What careers can ISAT lead to?'];
+  } else {
+    options = [lead, 'What courses do ISAT students take?', 'What concentrations does ISAT offer?', 'What careers can ISAT lead to?'];
+  }
+  const asked = text.trim().toLowerCase();
+  return options.filter((question, index, all) => all.indexOf(question) === index && question.toLowerCase() !== asked).slice(0, 4);
+}
 
 function BrandLogo({ className }: { className?: string }) {
   return (
@@ -76,6 +125,7 @@ export default function Home() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [desktopCollapsed, setDesktopCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [showExamples, setShowExamples] = useState(false);
   const scheduleMessageRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -205,6 +255,7 @@ export default function Home() {
     setMultiSelected([]);
     setSingleSelected('');
     setMobileOpen(false);
+    setShowExamples(false);
     inputRef.current?.focus();
   };
 
@@ -353,6 +404,39 @@ export default function Home() {
     );
   };
 
+  const renderFollowUps = () => {
+    const last = messages[messages.length - 1];
+    if (!last || last.role !== 'bot' || isLoading) return null;
+    if (getPromptOptions(last.content) || isScheduleMessage(last.content)) return null;
+    if (last.content.startsWith('Sorry,')) return null;
+
+    const userMessages = messages.filter((item) => item.role === 'user').map((item) => item.content);
+    const lastUser = userMessages[userMessages.length - 1] ?? '';
+    const previousUser = userMessages[userMessages.length - 2] ?? '';
+    const topic = isFollowUpPrompt(lastUser) && previousUser ? `${previousUser} ${lastUser}` : lastUser;
+    const alreadyAskedMore = userMessages.some((question) => /tell me more about that/i.test(question));
+    const options = followUpsForTopic(topic, alreadyAskedMore);
+
+    return (
+      <div className="prompt-options-panel">
+        <p className="prompt-hint">Suggested questions</p>
+        <div className="suggested-questions">
+          {options.map((opt) => (
+            <button
+              key={opt}
+              type="button"
+              className="suggestion-chip"
+              onClick={() => sendQuestion(opt)}
+              disabled={isLoading}
+            >
+              {opt}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   const composer = (
     <form className="composer" onSubmit={handleSubmit}>
       <label className="sr-only" htmlFor="chat-input">Message ISAT Recruiter</label>
@@ -479,12 +563,20 @@ export default function Home() {
               <div className="starter-grid">
                 {suggestedQuestions.map((item) => {
                   const Icon = item.icon;
+                  const examplesOpen = item.action === 'examples' && showExamples;
                   return (
                     <button
                       key={item.label}
                       type="button"
-                      className="starter-card"
-                      onClick={() => sendQuestion(item.label)}
+                      className={`starter-card${examplesOpen ? ' selected' : ''}`}
+                      aria-expanded={item.action === 'examples' ? showExamples : undefined}
+                      onClick={() => {
+                        if (item.action === 'examples') {
+                          setShowExamples((open) => !open);
+                          return;
+                        }
+                        void sendQuestion(item.label);
+                      }}
                       disabled={isLoading}
                     >
                       <Icon size={18} className="starter-card-icon" />
@@ -494,6 +586,24 @@ export default function Home() {
                   );
                 })}
               </div>
+              {showExamples && (
+                <div className="example-panel" aria-label="Example questions">
+                  <p className="prompt-hint">Start with an overview. You can ask for more detail after the answer.</p>
+                  <div className="suggested-questions">
+                    {exampleQuestions.map((question) => (
+                      <button
+                        key={question}
+                        type="button"
+                        className="suggestion-chip"
+                        onClick={() => sendQuestion(question)}
+                        disabled={isLoading}
+                      >
+                        {question}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
               {composer}
               {disclaimer}
             </div>
@@ -556,7 +666,9 @@ export default function Home() {
                             msg.content
                           )}
                         </div>
-                        {msg.role === 'bot' && index === messages.length - 1 && renderPromptOptions(msg.content)}
+                        {msg.role === 'bot' && index === messages.length - 1 && !isLoading && (
+                          renderPromptOptions(msg.content) ?? renderFollowUps()
+                        )}
                       </div>
                     </div>
                   );
