@@ -17,20 +17,40 @@ def _is_gen_ed(course: dict[str, Any]) -> bool:
     return compact == "GENED"
 
 
+def _is_taken(course: dict[str, Any]) -> bool:
+    return (course.get("status") or "") == "taken"
+
+
 def _escape_md_cell(text: str) -> str:
     return (text or "").replace("|", " ").replace("\n", " ").strip()
 
 
+def _past(text: str) -> str:
+    return f'<span class="past-course">{text}</span>'
+
+
 def _course_row_text(course: dict[str, Any]) -> str:
     if _is_gen_ed(course):
-        return "General Education Course"
-    code = (course.get("code") or "").strip()
-    title = (course.get("title") or "").strip()
-    if title.startswith(code):
-        return _escape_md_cell(title)
-    if title:
-        return _escape_md_cell(f"{code}. {title}")
-    return _escape_md_cell(code)
+        label = "General Education Course"
+    else:
+        code = (course.get("code") or "").strip()
+        title = (course.get("title") or "").strip()
+        if title.startswith(code):
+            label = _escape_md_cell(title)
+        elif title:
+            label = _escape_md_cell(f"{code}. {title}")
+        else:
+            label = _escape_md_cell(code)
+    if _is_taken(course):
+        return _past(label)
+    return label
+
+
+def _credit_cell(course: dict[str, Any]) -> str:
+    raw = str(course.get("credits", ""))
+    if _is_taken(course):
+        return _past(raw)
+    return raw
 
 
 def _gen_ed_credits_planned(semesters: list[dict[str, Any]]) -> int:
@@ -40,6 +60,43 @@ def _gen_ed_credits_planned(semesters: list[dict[str, Any]]) -> int:
             if _is_gen_ed(c):
                 n += int(c.get("credits") or 0)
     return n
+
+
+def _taken_courses(semesters: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for sem in semesters:
+        for c in sem.get("courses", []):
+            if not _is_taken(c):
+                continue
+            if _is_gen_ed(c):
+                continue
+            code = normalize_course_code(c.get("code") or "")
+            if not code or code in seen:
+                continue
+            seen.add(code)
+            out.append(c)
+    return out
+
+
+def _completed_coursework_table(semesters: list[dict[str, Any]]) -> list[str]:
+    taken = _taken_courses(semesters)
+    if not taken:
+        return []
+    lines = [
+        "#### Completed coursework",
+        "| Course | Course title | Credits | Status |",
+        "|---|---|---:|---|",
+    ]
+    for c in taken:
+        code = _escape_md_cell((c.get("code") or "").strip())
+        title = _escape_md_cell((c.get("title") or "").strip())
+        credits = str(c.get("credits") or "")
+        lines.append(
+            f"| {_past(code)} | {_past(title)} | {_past(credits)} | {_past('Completed')} |"
+        )
+    lines.append("")
+    return lines
 
 
 def _paired_year_tables(semesters: list[dict[str, Any]]) -> list[str]:
@@ -64,8 +121,8 @@ def _paired_year_tables(semesters: list[dict[str, Any]]) -> list[str]:
         rows = max(len(fc), len(sc))
         for r in range(rows):
             f_c, s_c = (fc[r] if r < len(fc) else None), (sc[r] if r < len(sc) else None)
-            fl = str(f_c["credits"]) if f_c else ""
-            sl = str(s_c["credits"]) if s_c else ""
+            fl = _credit_cell(f_c) if f_c else ""
+            sl = _credit_cell(s_c) if s_c else ""
             ft = _course_row_text(f_c) if f_c else ""
             st = _course_row_text(s_c) if s_c else ""
             lines.append(f"| {ft} | {fl} | {st} | {sl} |")
@@ -133,21 +190,31 @@ def format_schedule_message(
     totals = schedule_output.get("totals") or {}
     planned = int(totals.get("planned_credits") or 0)
     target = int(totals.get("degree_target") or 120)
-    gen_sum = _gen_ed_credits_planned(semesters)
+    completed = int(totals.get("credits_completed") or credits_completed_prior or 0)
+    major_done = int(totals.get("major_credits_completed") or 0)
+    gen_done = int(totals.get("gen_ed_credits_completed") or 0)
+    gen_target = int(totals.get("gen_ed_target") or 41)
+    major_planned = int(totals.get("major_credits_planned") or 0)
+    gen_sum = int(totals.get("gen_ed_credits_planned") or 0) or (
+        _gen_ed_credits_planned(semesters) + int(totals.get("unplaced_completed_gen_ed") or 0)
+    )
 
     out: list[str] = [
         f"Below is a four-year sample plan for the **{concentration.title()}** concentration "
         f"with the **{sector.title()}** sector.",
         "",
-        f"**Credits satisfied (completed):** {credits_completed_prior}",
+        f"**ISAT major credits completed:** {major_done}",
+        f"**General Education credits completed:** {gen_done} / {gen_target}",
+        f"**Credits satisfied (completed):** {completed}",
         "",
     ]
-
+    out.extend(_completed_coursework_table(semesters))
     out.extend(_paired_year_tables(semesters))
 
     out.append("### Final summary row")
     out.append(f"**Total Planned Credits:** {planned} / {target}  ")
-    out.append(f"**Total General Education Credits Planned:** {gen_sum} / 41  ")
+    out.append(f"**Total ISAT Major Credits Planned:** {major_planned}  ")
+    out.append(f"**Total General Education Credits Planned:** {gen_sum} / {gen_target}  ")
     out.append("")
 
     out.extend(_selected_concentration_lines(selected_courses, concentration_elective_options))

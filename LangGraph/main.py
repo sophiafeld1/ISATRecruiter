@@ -27,6 +27,20 @@ from langchain_openai import OpenAIEmbeddings
 from openai import OpenAI
 from database.db_write import LinkDatabase
 from planner.course_scheduler import CourseScheduler, normalize_course_code
+from planner.plan_graph import (
+    GEN_ED_CREDIT_OPTIONS,
+    GRADUATION_OPTIONS,
+    STANDING_OPTIONS,
+    apply_plan_edits,
+    extract_course_codes,
+    first_future_semester,
+    looks_like_schedule_edit,
+    parse_completed_courses,
+    parse_gen_ed_credits,
+    parse_graduation_timing,
+    parse_standing,
+    parse_timing_constraints,
+)
 from planner.schedule_render import format_schedule_message
 
 # Load .env file from project root
@@ -74,15 +88,32 @@ scheduler_tool = CourseScheduler(project_root=project_root)
 
 _ISAT_COURSE_RE = re.compile(r"\bisat\s*(\d{3})\b", re.IGNORECASE)
 _SCHEDULE_RE = re.compile(r"\b(course\s+schedule|schedule|plan\s+courses|plan\s+my\s+courses|academic\s+plan)\b", re.IGNORECASE)
-_SCHEDULE_CONTEXT_RE = re.compile(
-    r"what concentration do you want|which sector do you want to complete|choose exactly 4 concentration courses",
+_INTAKE_PROMPT_RE = re.compile(
+    r"what year standing are you|"
+    r"graduate on time with your class year|"
+    r"general education credits have you already completed|"
+    r"already completed|"
+    r"what concentration do you want|"
+    r"which sector do you want to complete|"
+    r"choose exactly 4 concentration courses|"
+    r"generate my schedule",
+    re.IGNORECASE,
+)
+_GENERATED_SCHEDULE_RE = re.compile(
+    r"four-year sample plan|do you want to make any changes or edits to your schedule",
     re.IGNORECASE,
 )
 _INTAKE_STATES = Literal[
+    "awaiting_standing",
+    "awaiting_graduation_timing",
+    "awaiting_gen_ed_credits",
+    "awaiting_completed_courses",
     "awaiting_concentration",
     "awaiting_sector",
     "awaiting_concentration_course_selection",
+    "awaiting_timing_constraints",
     "ready_to_generate_schedule",
+    "awaiting_schedule_edits",
 ]
 
 _CONCENTRATION_ALIASES = {
@@ -100,14 +131,28 @@ def _is_schedule_request(question: str) -> bool:
     return bool(_SCHEDULE_RE.search(question or ""))
 
 
+def _is_generated_schedule(content: str) -> bool:
+    return bool(_GENERATED_SCHEDULE_RE.search(content or ""))
+
+
+def _is_intake_prompt(content: str) -> bool:
+    return bool(_INTAKE_PROMPT_RE.search(content or ""))
+
+
 def _is_schedule_context(question: str, conversation_history: list[dict]) -> bool:
     if _is_schedule_request(question):
         return True
-    if _SCHEDULE_CONTEXT_RE.search(question or ""):
+    if _INTAKE_PROMPT_RE.search(question or "") or looks_like_schedule_edit(question):
         return True
-    for msg in reversed(conversation_history[-8:]):
-        if msg.get("role") == "assistant" and _SCHEDULE_CONTEXT_RE.search(msg.get("content") or ""):
+    for msg in reversed(conversation_history):
+        if msg.get("role") != "assistant":
+            continue
+        content = msg.get("content") or ""
+        if _is_intake_prompt(content):
             return True
+        if _is_generated_schedule(content):
+            return looks_like_schedule_edit(question)
+        break
     return False
 
 
@@ -124,42 +169,30 @@ def _parse_sector(user_text: str) -> str | None:
 
 
 def _extract_course_codes(user_text: str) -> list[str]:
-    out: list[str] = []
-    seen: set[str] = set()
-    for raw in re.findall(r"(?:ISAT\s*)?\d{3}[A-Za-z]?", user_text or "", re.IGNORECASE):
-        code = normalize_course_code(raw)
-        if code and code not in seen:
-            seen.add(code)
-            out.append(code)
-    return out
+    return extract_course_codes(user_text)
+
+
+def _answer_after(needle: str, question: str, conversation_history: list[dict]) -> str | None:
+    needle_l = needle.lower()
+    for i in range(len(conversation_history) - 1, -1, -1):
+        msg = conversation_history[i]
+        if msg.get("role") != "assistant":
+            continue
+        if needle_l not in (msg.get("content") or "").lower():
+            continue
+        for follow in conversation_history[i + 1:]:
+            if follow.get("role") == "user":
+                return follow.get("content") or ""
+        return question
+    return None
 
 
 def _extract_selection_text(question: str, conversation_history: list[dict]) -> str | None:
-    for i in range(len(conversation_history) - 1, -1, -1):
-        msg = conversation_history[i]
-        if msg.get("role") != "assistant":
-            continue
-        if "choose exactly 4 concentration courses" not in (msg.get("content") or "").lower():
-            continue
-        for follow in conversation_history[i + 1:]:
-            if follow.get("role") == "user":
-                return follow.get("content") or ""
-        return None
-    return None
+    return _answer_after("choose exactly 4 concentration courses", question, conversation_history)
 
 
 def _extract_sector_text(question: str, conversation_history: list[dict]) -> str | None:
-    for i in range(len(conversation_history) - 1, -1, -1):
-        msg = conversation_history[i]
-        if msg.get("role") != "assistant":
-            continue
-        if "which sector do you want to complete" not in (msg.get("content") or "").lower():
-            continue
-        for follow in conversation_history[i + 1:]:
-            if follow.get("role") == "user":
-                return follow.get("content") or ""
-        return None
-    return None
+    return _answer_after("which sector do you want to complete", question, conversation_history)
 
 
 def _parse_selected_options(selection_text: str | None, options: list[dict], choose_count: int = 4) -> list[str]:
@@ -181,42 +214,136 @@ def _parse_selected_options(selection_text: str | None, options: list[dict], cho
     return out[:choose_count]
 
 
+def _collect_intake_payload(question: str, conversation_history: list[dict]) -> dict:
+    combined_user_text = " ".join(
+        [(m.get("content") or "") for m in conversation_history if m.get("role") == "user"] + [question]
+    )
+    standing_text = _answer_after("what year standing are you", question, conversation_history)
+    standing = parse_standing(standing_text or "") or parse_standing(combined_user_text)
+
+    graduation_text = _answer_after("graduate on time with your class year", question, conversation_history)
+    graduation = parse_graduation_timing(graduation_text or "") or parse_graduation_timing(combined_user_text)
+
+    gen_ed_text = _answer_after(
+        "general education credits have you already completed", question, conversation_history
+    )
+    gen_ed_answered = False
+    gen_ed_credits = 0
+    if gen_ed_text is not None:
+        parsed_ok, parsed_gen = parse_gen_ed_credits(gen_ed_text)
+        if parsed_ok and parsed_gen is not None:
+            gen_ed_answered = True
+            gen_ed_credits = parsed_gen
+        elif gen_ed_text.strip():
+            gen_ed_answered = True
+            gen_ed_credits = 0
+
+    completed_text = _answer_after("ISAT core courses have you already completed", question, conversation_history)
+    if completed_text is None:
+        taken = []
+        completed_answered = False
+    else:
+        completed_answered, taken = parse_completed_courses(completed_text)
+        if not completed_answered:
+            taken = extract_course_codes(completed_text)
+            completed_answered = True
+
+    concentration_text = _answer_after("what concentration do you want", question, conversation_history)
+    concentration = _parse_concentration(concentration_text or "") or _parse_concentration(combined_user_text)
+
+    sector_text = _extract_sector_text(question, conversation_history)
+    sector = _parse_sector(sector_text or "")
+    if not sector:
+        # Only fall back to combined text after the sector prompt has been asked.
+        if sector_text is not None:
+            sector = _parse_sector(combined_user_text)
+
+    options = scheduler_tool.concentration_options(concentration) if concentration else []
+    selection_text = _extract_selection_text(question, conversation_history)
+    selected_courses = _parse_selected_options(selection_text, options, choose_count=4) if selection_text else []
+
+    timing_text = _answer_after("generate my schedule", question, conversation_history)
+    timing_constraints = parse_timing_constraints(
+        timing_text or "",
+        first_future=first_future_semester(standing or "freshman"),
+    ) if timing_text else {}
+
+    return {
+        "standing": standing,
+        "standing_asked": standing_text is not None or bool(standing),
+        "graduation": graduation,
+        "graduation_asked": graduation_text is not None or bool(graduation),
+        "taken_courses": taken,
+        "completed_answered": completed_answered,
+        "gen_ed_credits": gen_ed_credits,
+        "gen_ed_answered": gen_ed_answered,
+        "concentration": concentration,
+        "sector": sector,
+        "options": options,
+        "selected_courses": selected_courses,
+        "timing_text": timing_text,
+        "timing_constraints": timing_constraints,
+    }
+
+
+def _scheduler_input_from_payload(payload: dict) -> dict:
+    return {
+        "concentration": payload["concentration"],
+        "sector": payload["sector"],
+        "selected_concentration_courses": payload.get("selected_courses") or [],
+        "standing": payload.get("standing") or "freshman",
+        "graduation_timing": payload.get("graduation") or "on_time",
+        "taken_courses": payload.get("taken_courses") or [],
+        "gen_ed_credits": int(payload.get("gen_ed_credits") or 0),
+        "timing_constraints": payload.get("timing_constraints") or {},
+    }
+
+
+def _format_plan_from_payload(payload: dict) -> str:
+    scheduler_input = _scheduler_input_from_payload(payload)
+    schedule_output = scheduler_tool.plan(scheduler_input)
+    elective_options = scheduler_tool.concentration_options(payload["concentration"])
+    completed = int((schedule_output.get("totals") or {}).get("credits_completed") or 0)
+    return format_schedule_message(
+        concentration=payload["concentration"],
+        sector=payload["sector"],
+        selected_courses=payload.get("selected_courses") or [],
+        schedule_output=schedule_output,
+        concentration_elective_options=elective_options,
+        credits_completed_prior=completed,
+    )
+
+
 def _get_intake_state(
     question: str,
     conversation_history: list[dict],
 ) -> tuple[_INTAKE_STATES, dict]:
-    combined_user_text = " ".join(
-        [(m.get("content") or "") for m in conversation_history if m.get("role") == "user"] + [question]
-    )
-    concentration = _parse_concentration(combined_user_text)
-    if not concentration:
-        return "awaiting_concentration", {}
+    payload = _collect_intake_payload(question, conversation_history)
 
-    sector_text = _extract_sector_text(question, conversation_history)
-    if sector_text is None and "which sector do you want to complete" in " ".join(
-        [(m.get("content") or "").lower() for m in conversation_history if m.get("role") == "assistant"]
-    ):
-        sector_text = question
-    sector = _parse_sector(sector_text or "")
-    if not sector:
-        return "awaiting_sector", {"concentration": concentration}
+    if any(_is_generated_schedule(m.get("content") or "") for m in conversation_history if m.get("role") == "assistant"):
+        if looks_like_schedule_edit(question):
+            return "awaiting_schedule_edits", payload
 
-    options = scheduler_tool.concentration_options(concentration)
-    selection_text = _extract_selection_text(question, conversation_history) or question
-    selected_courses = _parse_selected_options(selection_text, options, choose_count=4)
+    if not payload["standing"]:
+        return "awaiting_standing", payload
+    if not payload["graduation"]:
+        return "awaiting_graduation_timing", payload
+    if not payload.get("gen_ed_answered"):
+        return "awaiting_gen_ed_credits", payload
+    if not payload["completed_answered"]:
+        return "awaiting_completed_courses", payload
+    if not payload["concentration"]:
+        return "awaiting_concentration", payload
+    if not payload["sector"]:
+        return "awaiting_sector", payload
+
+    options = payload["options"]
+    selected_courses = payload["selected_courses"]
     if options and len(selected_courses) < 4:
-        return "awaiting_concentration_course_selection", {
-            "concentration": concentration,
-            "sector": sector,
-            "options": options,
-            "selected_courses": selected_courses,
-        }
-
-    return "ready_to_generate_schedule", {
-        "concentration": concentration,
-        "sector": sector,
-        "selected_courses": selected_courses,
-    }
+        return "awaiting_concentration_course_selection", payload
+    if payload["timing_text"] is None:
+        return "awaiting_timing_constraints", payload
+    return "ready_to_generate_schedule", payload
 
 
 def _expand_retrieval_query(question: str) -> str:
@@ -290,8 +417,40 @@ def _prioritize_course_mentions(
     return (primary + mention + rest)[:top_k]
 
 
+def _completed_courses_prompt(standing: str) -> str:
+    lines = [
+        "Which of these ISAT core courses have you already completed? Check all that apply, or choose None yet.",
+        "",
+    ]
+    for title, codes in scheduler_tool.core_checklist_groups(standing):
+        lines.append(f"{title}: {', '.join(codes)}")
+    return "\n".join(lines)
+
+
 def _handle_schedule_intake(question: str, conversation_history: list[dict]) -> str:
     state, payload = _get_intake_state(question, conversation_history)
+
+    if state == "awaiting_standing":
+        chips = ", ".join(STANDING_OPTIONS)
+        return f"What year standing are you? Choose one: {chips}."
+
+    if state == "awaiting_graduation_timing":
+        chips = ", ".join(GRADUATION_OPTIONS)
+        return (
+            "Are you planning to graduate on time with your class year? "
+            f"Choose one: {chips}."
+        )
+
+    if state == "awaiting_gen_ed_credits":
+        chips = ", ".join(GEN_ED_CREDIT_OPTIONS)
+        return (
+            "How many General Education credits have you already completed? "
+            "The requirement is 41 credits. Type a number from 0 to 41, or choose one: "
+            f"{chips}."
+        )
+
+    if state == "awaiting_completed_courses":
+        return _completed_courses_prompt(payload.get("standing") or "freshman")
 
     if state == "awaiting_concentration":
         return "What concentration do you want to complete?"
@@ -303,27 +462,41 @@ def _handle_schedule_intake(question: str, conversation_history: list[dict]) -> 
     if state == "awaiting_concentration_course_selection":
         concentration = payload["concentration"]
         options = payload["options"]
-        codes = ", ".join(normalize_course_code(c["code"]) for c in options)
+        taken = set(payload.get("taken_courses") or [])
+        visible = [
+            normalize_course_code(c["code"])
+            for c in options
+            if normalize_course_code(c["code"]) not in taken
+        ] or [normalize_course_code(c["code"]) for c in options]
+        codes = ", ".join(visible)
         return f"For {concentration.title()}, choose exactly 4 concentration courses from: {codes}."
 
-    concentration = payload["concentration"]
-    sector = payload["sector"]
-    selected_courses = payload["selected_courses"]
-    schedule_output = scheduler_tool.plan(
-        {
-            "concentration": concentration,
-            "sector": sector,
-            "selected_concentration_courses": selected_courses,
-        }
-    )
-    elective_options = scheduler_tool.concentration_options(concentration)
-    return format_schedule_message(
-        concentration=concentration,
-        sector=sector,
-        selected_courses=selected_courses,
-        schedule_output=schedule_output,
-        concentration_elective_options=elective_options,
-    )
+    if state == "awaiting_timing_constraints":
+        return (
+            "If you need specific courses in specific terms, type that now, "
+            "or choose Generate my schedule."
+        )
+
+    if state == "awaiting_schedule_edits":
+        graph = scheduler_tool.build_graph(_scheduler_input_from_payload(payload))
+        extra = payload.get("options") or []
+        apply_plan_edits(graph, question, extra_nodes=extra)
+        payload["selected_courses"] = graph.selected_concentration_courses
+        payload["timing_constraints"] = graph.timing_constraints
+        payload["taken_courses"] = sorted(graph.taken_codes)
+        schedule_output = scheduler_tool.plan_from_graph(graph)
+        elective_options = scheduler_tool.concentration_options(payload["concentration"])
+        completed = int((schedule_output.get("totals") or {}).get("credits_completed") or 0)
+        return format_schedule_message(
+            concentration=payload["concentration"],
+            sector=payload["sector"],
+            selected_courses=payload.get("selected_courses") or [],
+            schedule_output=schedule_output,
+            concentration_elective_options=elective_options,
+            credits_completed_prior=completed,
+        )
+
+    return _format_plan_from_payload(payload)
 
 
 class GraphState(TypedDict):

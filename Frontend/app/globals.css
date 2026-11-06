@@ -755,6 +755,20 @@ button {
   color: var(--text-secondary);
 }
 
+.prompt-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.prompt-group-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
 .suggested-questions {
   display: flex;
   flex-wrap: wrap;

@@ -32,9 +32,15 @@ interface ConversationMessage {
   content: string;
 }
 
-interface PromptOptions {
-  kind: 'single' | 'multi';
+interface PromptGroup {
+  title: string;
   options: string[];
+}
+
+interface PromptOptions {
+  kind: 'single' | 'multi' | 'checklist' | 'generate';
+  options: string[];
+  groups?: PromptGroup[];
 }
 
 const suggestedQuestions = [
@@ -178,7 +184,7 @@ export default function Home() {
   useEffect(() => {
     const lastBot = [...messages].reverse().find((m) => m.role === 'bot');
     const prompt = lastBot ? getPromptOptions(lastBot.content) : null;
-    if (!prompt || prompt.kind !== 'multi') {
+    if (!prompt || (prompt.kind !== 'multi' && prompt.kind !== 'checklist')) {
       setMultiSelected([]);
     }
     if (!prompt || prompt.kind !== 'single') {
@@ -317,6 +323,42 @@ export default function Home() {
 
   const getPromptOptions = (content: string): PromptOptions | null => {
     const text = content.toLowerCase();
+    if (text.includes('what year standing are you')) {
+      return {
+        kind: 'single',
+        options: [
+          'Freshman (0–29 credits)',
+          'Sophomore (30–59 credits)',
+          'Junior (60–89 credits)',
+          'Senior (90+ credits)',
+        ],
+      };
+    }
+    if (text.includes('graduate on time with your class year')) {
+      return {
+        kind: 'single',
+        options: ['On time', 'Extra semester', 'Extra year', 'Graduate a semester early', 'Graduate a year early'],
+      };
+    }
+    if (text.includes('general education credits have you already completed')) {
+      return {
+        kind: 'single',
+        options: ['None yet (0)', '15 credits', '30 credits', '41 credits'],
+      };
+    }
+    if (text.includes('already completed')) {
+      const groups: PromptGroup[] = [];
+      for (const line of content.split('\n')) {
+        const match = line.match(/^([^:]{3,80}):\s*(ISAT\s*\d{3}.*)$/i);
+        if (!match) continue;
+        groups.push({
+          title: match[1].trim(),
+          options: match[2].split(',').map((s) => s.trim()).filter(Boolean),
+        });
+      }
+      if (!groups.length) return null;
+      return { kind: 'checklist', options: groups.flatMap((g) => g.options), groups };
+    }
     if (text.includes('what concentration do you want to complete')) {
       return {
         kind: 'single',
@@ -335,6 +377,9 @@ export default function Home() {
       const options = match[1].split(',').map((s) => s.trim()).filter(Boolean);
       return { kind: 'multi', options };
     }
+    if (text.includes('generate my schedule')) {
+      return { kind: 'generate', options: ['Generate my schedule'] };
+    }
     return null;
   };
 
@@ -342,6 +387,13 @@ export default function Home() {
     setMultiSelected((prev) => {
       if (prev.includes(opt)) return prev.filter((v) => v !== opt);
       if (prev.length >= 4) return prev;
+      return [...prev, opt];
+    });
+  };
+
+  const toggleChecklistOption = (opt: string) => {
+    setMultiSelected((prev) => {
+      if (prev.includes(opt)) return prev.filter((v) => v !== opt);
       return [...prev, opt];
     });
   };
@@ -367,6 +419,75 @@ export default function Home() {
                 {opt}
               </button>
             ))}
+          </div>
+        </div>
+      );
+    }
+    if (prompt.kind === 'generate') {
+      return (
+        <div className="prompt-options-panel">
+          <div className="suggested-questions">
+            <button
+              type="button"
+              className="suggestion-chip submit-chip"
+              onClick={() => void sendQuestion('Generate my schedule')}
+              disabled={isLoading}
+            >
+              Generate my schedule
+            </button>
+          </div>
+        </div>
+      );
+    }
+    if (prompt.kind === 'checklist') {
+      const groups = prompt.groups?.length
+        ? prompt.groups
+        : [{ title: 'Courses', options: prompt.options }];
+      return (
+        <div className="prompt-options-panel">
+          <p className="prompt-hint">Select every ISAT course you have already completed</p>
+          {groups.map((group) => (
+            <div key={group.title} className="prompt-group">
+              <p className="prompt-group-title">{group.title}</p>
+              <div className="suggested-questions">
+                {group.options.map((opt) => (
+                  <button
+                    key={opt}
+                    type="button"
+                    className={`suggestion-chip ${multiSelected.includes(opt) ? 'selected' : ''}`}
+                    onClick={() => toggleChecklistOption(opt)}
+                    disabled={isLoading}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+          <div className="suggested-questions">
+            <button
+              type="button"
+              className="suggestion-chip"
+              onClick={() => {
+                void sendQuestion('None yet');
+                setMultiSelected([]);
+              }}
+              disabled={isLoading}
+            >
+              None yet
+            </button>
+            <button
+              type="button"
+              className="suggestion-chip submit-chip"
+              onClick={() => {
+                if (!multiSelected.length) return;
+                void sendQuestion(multiSelected.join(', '));
+                setMultiSelected([]);
+              }}
+              disabled={isLoading || multiSelected.length === 0}
+            >
+              Submit {multiSelected.length} completed
+            </button>
           </div>
         </div>
       );

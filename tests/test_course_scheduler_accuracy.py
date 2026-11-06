@@ -155,6 +155,196 @@ class TestCourseSchedulerAccuracy(unittest.TestCase):
                         msg=f"Upper-year semester too light: {sem['term']}",
                     )
 
+    def _base_input(self, **overrides) -> dict:
+        data = {
+            "concentration": "applied computing",
+            "sector": "energy",
+            "selected_concentration_courses": ["ISAT 440", "ISAT 441", "ISAT 445", "ISAT 449"],
+            "standing": "freshman",
+            "graduation_timing": "on_time",
+            "taken_courses": [],
+        }
+        data.update(overrides)
+        return data
+
+    def test_plan_graph_contains_required_prereqs_and_taken(self) -> None:
+        scheduler = CourseScheduler(project_root=_project_root())
+        taken = ["ISAT 112", "ISAT 151"]
+        graph = scheduler.build_graph(self._base_input(taken_courses=taken))
+        self.assertIn("ISAT 112", graph.taken_codes)
+        self.assertIn("ISAT 151", graph.taken_codes)
+        self.assertNotIn("ISAT 112", graph.remaining_codes)
+        for code in ["ISAT 112", "ISAT 211", "ISAT 252", "ISAT 300", "ISAT 490", "ISAT 440", "ISAT 301"]:
+            self.assertIn(code, graph.nodes, msg=f"missing required node {code}")
+        self.assertEqual(set(graph.prereq_graph), set(graph.nodes))
+        for code, prereqs in graph.prereq_graph.items():
+            for p in prereqs:
+                self.assertIn(p, graph.nodes)
+
+    def test_taken_first_year_courses_are_not_replanned(self) -> None:
+        scheduler = CourseScheduler(project_root=_project_root())
+        taken = ["ISAT 112", "ISAT 113", "ISAT 113L"]
+        output = scheduler.plan(self._base_input(taken_courses=taken))
+        copies = [
+            (idx, c)
+            for idx, sem in enumerate(output["semesters"])
+            for c in sem["courses"]
+            if normalize_course_code(c["code"]) == "ISAT 112"
+        ]
+        self.assertEqual(len(copies), 1)
+        self.assertEqual(copies[0][1].get("status"), "taken")
+        remaining_112 = [
+            c
+            for sem in output["semesters"]
+            for c in sem["courses"]
+            if normalize_course_code(c["code"]) == "ISAT 112" and c.get("status") != "taken"
+        ]
+        self.assertFalse(remaining_112)
+
+    def _inject_prereq_pair(self, graph) -> None:
+        from planner.plan_graph import CourseNode
+
+        for code, title, prereqs, status in (
+            ("ISAT 350", "Biotechnology for the New Millennium I", [], "remaining"),
+            ("ISAT 351", "Biotechnology for the New Millennium II", ["ISAT 350"], "remaining"),
+        ):
+            if code not in graph.nodes:
+                graph.nodes[code] = CourseNode(
+                    code=code,
+                    title=title,
+                    credits=3,
+                    category="Sector",
+                    prereqs=prereqs,
+                    status=status,
+                )
+            else:
+                graph.nodes[code].prereqs = prereqs
+                graph.nodes[code].status = status
+            graph.prereq_graph[code] = list(prereqs)
+            if status == "remaining" and code not in graph.remaining_codes:
+                graph.remaining_codes.append(code)
+
+    def test_remaining_course_never_before_prereqs(self) -> None:
+        scheduler = CourseScheduler(project_root=_project_root())
+        graph = scheduler.build_graph(self._base_input())
+        self._inject_prereq_pair(graph)
+        output = scheduler.plan_from_graph(graph)
+        positions: dict[str, int] = {}
+        for idx, sem in enumerate(output["semesters"]):
+            for course in sem["courses"]:
+                code = normalize_course_code(course["code"])
+                if code in {"ISAT 350", "ISAT 351"}:
+                    positions[code] = idx
+        self.assertLess(positions["ISAT 350"], positions["ISAT 351"])
+
+        taken_graph = scheduler.build_graph(self._base_input(taken_courses=["ISAT 350"]))
+        self._inject_prereq_pair(taken_graph)
+        taken_graph.mark_taken("ISAT 350")
+        taken_out = scheduler.plan_from_graph(taken_graph)
+        pos = {}
+        status_350 = None
+        for idx, sem in enumerate(taken_out["semesters"]):
+            for course in sem["courses"]:
+                code = normalize_course_code(course["code"])
+                if code in {"ISAT 350", "ISAT 351"}:
+                    pos[code] = idx
+                if code == "ISAT 350":
+                    status_350 = course.get("status")
+        self.assertEqual(status_350, "taken")
+        self.assertGreaterEqual(pos["ISAT 351"], pos["ISAT 350"])
+
+    def test_sophomore_standing_keeps_first_year_as_past(self) -> None:
+        scheduler = CourseScheduler(project_root=_project_root())
+        first_year = [
+            "ISAT 112",
+            "ISAT 113",
+            "ISAT 113L",
+            "ISAT 151",
+            "ISAT 171",
+            "ISAT 211",
+            "ISAT 212",
+            "ISAT 152",
+            "ISAT 251",
+        ]
+        output = scheduler.plan(
+            self._base_input(standing="sophomore", taken_courses=first_year)
+        )
+        self.assertGreaterEqual(len(output["semesters"]), 8)
+        for sem in output["semesters"][:2]:
+            for course in sem["courses"]:
+                if normalize_course_code(course["code"]).startswith("ISAT"):
+                    self.assertEqual(course.get("status"), "taken", msg=course)
+        remaining_first_year = [
+            normalize_course_code(c["code"])
+            for sem in output["semesters"][2:]
+            for c in sem["courses"]
+            if normalize_course_code(c["code"]) in set(first_year) and c.get("status") != "taken"
+        ]
+        self.assertFalse(remaining_first_year)
+
+    def test_sophomore_with_only_gen_ed_credits(self) -> None:
+        scheduler = CourseScheduler(project_root=_project_root())
+        graph = scheduler.build_graph(
+            self._base_input(standing="sophomore", taken_courses=[], gen_ed_credits=30)
+        )
+        self.assertEqual(graph.major_credits_completed, 0)
+        self.assertEqual(graph.gen_ed_credits_completed, 30)
+        self.assertEqual(graph.gen_ed_credits_remaining, 11)
+        self.assertEqual(graph.credits_completed, 30)
+
+        output = scheduler.plan_from_graph(graph)
+        totals = output["totals"]
+        self.assertEqual(totals["major_credits_completed"], 0)
+        self.assertEqual(totals["gen_ed_credits_completed"], 30)
+        self.assertGreaterEqual(totals["gen_ed_credits_planned"], 41)
+
+        first_year_isat_remaining = [
+            c
+            for sem in output["semesters"][:2]
+            for c in sem["courses"]
+            if normalize_course_code(c["code"]).startswith("ISAT") and c.get("status") != "taken"
+        ]
+        self.assertFalse(first_year_isat_remaining)
+        taken_gen = [
+            c
+            for sem in output["semesters"][:2]
+            for c in sem["courses"]
+            if c.get("category") == "General Education" and c.get("status") == "taken"
+        ]
+        self.assertGreaterEqual(sum(c["credits"] for c in taken_gen), 30)
+
+    def test_already_took_followup_marks_course_taken(self) -> None:
+        from planner.plan_graph import apply_plan_edits
+        from planner.schedule_render import format_schedule_message
+
+        scheduler = CourseScheduler(project_root=_project_root())
+        graph = scheduler.build_graph(self._base_input())
+        self.assertIn("ISAT 252", graph.remaining_codes)
+        apply_plan_edits(graph, "I already took ISAT 252")
+        self.assertIn("ISAT 252", graph.taken_codes)
+        self.assertNotIn("ISAT 252", graph.remaining_codes)
+        output = scheduler.plan_from_graph(graph)
+        copies = [
+            c
+            for sem in output["semesters"]
+            for c in sem["courses"]
+            if normalize_course_code(c["code"]) == "ISAT 252"
+        ]
+        self.assertTrue(copies)
+        self.assertTrue(all(c.get("status") == "taken" for c in copies))
+        rendered = format_schedule_message(
+            "applied computing",
+            "energy",
+            ["ISAT 440", "ISAT 441", "ISAT 445", "ISAT 449"],
+            output,
+            credits_completed_prior=int(output["totals"].get("credits_completed") or 0),
+        )
+        self.assertIn("Completed coursework", rendered)
+        self.assertIn("past-course", rendered)
+        self.assertIn("ISAT 252", rendered)
+        self.assertIn("ISAT major credits completed", rendered)
+        self.assertIn("General Education credits completed", rendered)
+
     def test_abet_title_sanity_rejects_boilerplate(self) -> None:
         bad = (
             "Please use the following format for the course syllabi "
